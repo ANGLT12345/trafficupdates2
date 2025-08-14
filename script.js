@@ -126,44 +126,62 @@ document.addEventListener('DOMContentLoaded', () => {
         trainAlertsContainer.innerHTML = '<p>Loading train service alerts...</p>';
         const data = await fetchLTAData('/TrainServiceAlerts');
 
-        if (data && data.value) {
-            const alert = data.value;
-            const status = alert.Status;
-            const line = alert.Line;
-            
-            trainAlertsContainer.innerHTML = ''; // Clear loading text
+        // A master list of all train lines to ensure all are displayed
+        const allTrainLines = [
+            { name: 'North-South Line', code: 'NSL' },
+            { name: 'East-West Line', code: 'EWL' },
+            { name: 'Circle Line', code: 'CCL' },
+            { name: 'North East Line', code: 'NEL' },
+            { name: 'Downtown Line', code: 'DTL' },
+            { name: 'Thomson-East Coast Line', code: 'TEL' },
+            { name: 'Bukit Panjang LRT', code: 'BPL' },
+            { name: 'Sengkang LRT', code: 'SPL' },
+            { name: 'Punggol LRT', code: 'PGL' }
+        ];
 
+        // Store active disruptions in a map for easy lookup
+        const disruptions = {};
+        if (data && data.value && data.value.length > 0) {
+            data.value.forEach(alert => {
+                // The API can list multiple affected lines in one message, e.g., "NSL, EWL"
+                const affectedLines = alert.Line.split(',');
+                affectedLines.forEach(lineCode => {
+                    const trimmedCode = lineCode.trim();
+                    disruptions[trimmedCode] = alert.Message[0] ? alert.Message[0].Content : 'Details not available.';
+                });
+            });
+        }
+
+        trainAlertsContainer.innerHTML = ''; // Clear loading text
+
+        // Iterate through the master list to display status for every line
+        allTrainLines.forEach(line => {
             const alertDiv = document.createElement('div');
             alertDiv.classList.add('train-alert-item');
-            
-            let lineCode = line;
-            if (line.includes('LRT')) lineCode = 'LRT';
 
-            if (status === '1') { // Normal service
-                alertDiv.classList.add('normal');
-                alertDiv.innerHTML = `
-                    <div class="train-line-icon line-${lineCode}">${line}</div>
-                    <div class="train-alert-details">
-                        <p><strong>Normal Service</strong></p>
-                    </div>
-                `;
-            } else { // Disruption
-                // Safely access the message content only when there is a disruption
-                const message = (alert.Message && alert.Message[0]) ? alert.Message[0].Content : 'Details not available.';
+            const lineCode = line.code;
+            const disruptionMessage = disruptions[lineCode];
+
+            if (disruptionMessage) { // If there is a disruption for this line
                 alertDiv.classList.add('disrupted');
                 alertDiv.innerHTML = `
-                    <div class="train-line-icon line-${lineCode}">${line}</div>
+                    <div class="train-line-icon line-${lineCode}">${lineCode}</div>
                     <div class="train-alert-details">
                         <p><strong>Service Disruption</strong></p>
-                        <p>${message}</p>
+                        <p>${disruptionMessage}</p>
+                    </div>
+                `;
+            } else { // Normal service for this line
+                alertDiv.classList.add('normal');
+                alertDiv.innerHTML = `
+                    <div class="train-line-icon line-${lineCode}">${lineCode}</div>
+                    <div class="train-alert-details">
+                        <p><strong>No Delay</strong></p>
                     </div>
                 `;
             }
             trainAlertsContainer.appendChild(alertDiv);
-
-        } else {
-            trainAlertsContainer.innerHTML = '<p>Could not retrieve train service alerts.</p>';
-        }
+        });
     };
 
     const displayTrafficImages = async () => {
