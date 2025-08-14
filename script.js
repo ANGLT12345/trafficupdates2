@@ -160,39 +160,93 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (data.items && data.items.length > 0) {
-                const forecastData = data.items[0].general;
-                
-                const generalForecast = forecastData.forecast;
-                const tempLow = forecastData.temperature.low;
-                const tempHigh = forecastData.temperature.high;
-                const humidityLow = forecastData.relative_humidity.low;
-                const humidityHigh = forecastData.relative_humidity.high;
-                const windSpeedLow = forecastData.wind.speed.low;
-                const windSpeedHigh = forecastData.wind.speed.high;
-                const windDirection = forecastData.wind.direction;
+                const forecast = data.items[0];
+                const periods = forecast.periods;
+                const general = forecast.general;
 
-                weatherContainer.innerHTML = `
-                    <div class="weather-forecast-item">
-                        <div class="weather-text">
-                            <p><strong>24-hour Forecast</strong></p>
-                            <p>${generalForecast}</p>
+                weatherContainer.innerHTML = ''; // Clear loading text
+
+                const periodsGrid = document.createElement('div');
+                periodsGrid.classList.add('weather-periods-grid');
+
+                const weatherIcons = {
+                    "Fair (Day)": "https://img.icons8.com/office/40/sun.png",
+                    "Fair (Night)": "https://img.icons8.com/office/40/bright-moon.png",
+                    "Partly Cloudy (Day)": "https://img.icons8.com/office/40/partly-cloudy-day.png",
+                    "Partly Cloudy (Night)": "https://img.icons8.com/office/40/partly-cloudy-night.png",
+                    "Cloudy": "https://img.icons8.com/office/40/cloud.png",
+                    "Hazy": "https://img.icons8.com/office/40/fog-day.png",
+                    "Slight Rain": "https://img.icons8.com/office/40/light-rain.png",
+                    "Rain": "https://img.icons8.com/office/40/rain.png",
+                    "Moderate Rain": "https://img.icons8.com/office/40/rain.png",
+                    "Heavy Rain": "https://img.icons8.com/office/40/heavy-rain.png",
+                    "Passing Showers": "https://img.icons8.com/office/40/light-rain-2.png",
+                    "Light Showers": "https://img.icons8.com/office/40/light-rain-2.png",
+                    "Showers": "https://img.icons8.com/office/40/rain.png",
+                    "Heavy Showers": "https://img.icons8.com/office/40/heavy-rain.png",
+                    "Thundery Showers": "https://img.icons8.com/office/40/cloud-lighting.png",
+                    "Heavy Thundery Showers": "https://img.icons8.com/office/40/cloud-lighting.png",
+                    "Windy": "https://img.icons8.com/office/40/wind.png",
+                };
+                const defaultWeatherIcon = 'https://img.icons8.com/office/40/cloud.png';
+
+                periods.slice(0, 3).forEach(period => {
+                    const periodDiv = document.createElement('div');
+                    periodDiv.classList.add('weather-period-item');
+
+                    const startTime = new Date(period.time.start).toLocaleTimeString('en-SG', { hour: 'numeric', hour12: true });
+                    const endTime = new Date(period.time.end).toLocaleTimeString('en-SG', { hour: 'numeric', hour12: true });
+                    
+                    let periodName = "Forecast";
+                    const startHour = new Date(period.time.start).getHours();
+                    if (startHour >= 6 && startHour < 12) periodName = "Morning";
+                    else if (startHour >= 12 && startHour < 18) periodName = "Afternoon";
+                    else periodName = "Night";
+
+                    periodDiv.innerHTML = `<h4 class="period-title">${periodName} (${startTime} - ${endTime})</h4>`;
+                    
+                    const regionsList = document.createElement('div');
+                    regionsList.classList.add('region-forecast-list');
+                    
+                    for (const region in period.regions) {
+                        const forecastText = period.regions[region];
+                        const regionDiv = document.createElement('div');
+                        regionDiv.classList.add('region-forecast-item');
+                        regionDiv.innerHTML = `
+                            <img src="${weatherIcons[forecastText] || defaultWeatherIcon}" alt="${forecastText}">
+                            <span><strong>${region.charAt(0).toUpperCase() + region.slice(1)}:</strong> ${forecastText}</span>
+                        `;
+                        regionsList.appendChild(regionDiv);
+                    }
+                    periodDiv.appendChild(regionsList);
+                    periodsGrid.appendChild(periodDiv);
+                });
+
+                weatherContainer.appendChild(periodsGrid);
+
+                const statsContainer = document.createElement('div');
+                statsContainer.classList.add('weather-overall-stats');
+                statsContainer.innerHTML = `
+                    <div class="weather-text">
+                        <p><strong>Overall Forecast</strong></p>
+                        <p>${general.forecast}</p>
+                    </div>
+                    <div class="weather-stats">
+                        <div class="weather-stats-item">
+                            <img src="https://img.icons8.com/material-outlined/24/thermometer.png" alt="Temperature">
+                            <span>${general.temperature.low}°C - ${general.temperature.high}°C</span>
                         </div>
-                        <div class="weather-stats">
-                            <div class="weather-stats-item">
-                                <img src="https://img.icons8.com/material-outlined/24/thermometer.png" alt="Temperature">
-                                <span>${tempLow}°C - ${tempHigh}°C</span>
-                            </div>
-                            <div class="weather-stats-item">
-                                <img src="https://img.icons8.com/?size=100&id=15365&format=png&color=000000" alt="Humidity">
-                                <span>${humidityLow}% - ${humidityHigh}%</span>
-                            </div>
-                            <div class="weather-stats-item">
-                                <img src="https://img.icons8.com/material-outlined/24/wind.png" alt="Wind">
-                                <span>${windDirection} ${windSpeedLow} - ${windSpeedHigh} km/h</span>
-                            </div>
+                        <div class="weather-stats-item">
+                            <img src="https://img.icons8.com/ios-glyphs/30/hygrometer.png" alt="Humidity">
+                            <span>${general.relative_humidity.low}% - ${general.relative_humidity.high}%</span>
+                        </div>
+                        <div class="weather-stats-item">
+                            <img src="https://img.icons8.com/material-outlined/24/wind.png" alt="Wind">
+                            <span>${general.wind.direction} ${general.wind.speed.low} - ${general.wind.speed.high} km/h</span>
                         </div>
                     </div>
                 `;
+                weatherContainer.appendChild(statsContainer);
             } else {
                 weatherContainer.innerHTML = '<p>Weather forecast data is currently unavailable.</p>';
             }
