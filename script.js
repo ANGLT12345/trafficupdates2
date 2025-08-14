@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 incidentDiv.innerHTML = `
                     <img src="${iconUrl}" alt="${incident.Type}" class="incident-icon">
                     <div class="incident-details">
-                        <p><strong>Message:</strong> ${cleanedMessage}</p>
+                        <p>${cleanedMessage}</p>
                     </div>
                 `;
                 return incidentDiv;
