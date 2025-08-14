@@ -2,17 +2,17 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f7f6;
-    color: #333;
+    background-color: #121212; /* Dark background */
+    color: #e0e0e0; /* Light text */
     line-height: 1.6;
 }
 
 header {
-    background-color: #28a745; /* Green for LTA */
+    background-color: #005ec4; /* Blue accent */
     color: #fff;
     padding: 1rem 0;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 h1 {
@@ -30,9 +30,9 @@ main {
 
 .data-section {
     margin-bottom: 10px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #333; /* Darker border */
     border-radius: 8px;
-    background-color: #fdfdfd;
+    background-color: #1e1e1e; /* Dark section background */
     transition: padding 0.2s ease-out;
 }
 
@@ -44,7 +44,7 @@ main {
     padding: 20px;
     cursor: pointer;
     outline: none;
-    list-style: none; /* Removes default triangle marker */
+    list-style: none;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -52,15 +52,15 @@ main {
 }
 
 .data-section summary:hover {
-    background-color: #f0f0f0;
+    background-color: #2a2a2a;
 }
 
 .data-section summary::-webkit-details-marker {
-    display: none; /* Hides marker in WebKit browsers */
+    display: none;
 }
 
 .data-section summary h2 {
-    color: #007bff;
+    color: #4dabf7; /* Lighter blue for titles */
     margin: 0;
     padding: 0;
     border: none;
@@ -70,12 +70,12 @@ main {
     content: '+';
     font-size: 1.8em;
     font-weight: bold;
-    color: #007bff;
+    color: #4dabf7; /* Lighter blue for icon */
     transition: transform 0.2s ease-in-out;
 }
 
 .data-section[open] summary::after {
-    content: '−'; /* Minus sign for open state */
+    content: '−';
 }
 
 .data-container, .image-grid {
@@ -85,14 +85,14 @@ main {
 .data-container p, .image-grid p {
     text-align: center;
     font-style: italic;
-    color: #666;
+    color: #aaa; /* Lighter grey for placeholder text */
 }
 
 /* --- UPDATED STYLES FOR INCIDENTS --- */
 
 .incident-item {
-    background-color: #e9f7ef;
-    border-left: 5px solid #28a745;
+    background-color: #2a2a2a;
+    border-left: 5px solid #4dabf7; /* Blue accent */
     padding: 15px;
     margin-bottom: 10px;
     border-radius: 5px;
@@ -118,7 +118,7 @@ main {
 }
 
 .incident-item strong {
-    color: #28a745;
+    color: #e0e0e0; /* Light text for strong tags */
 }
 
 /* --- STYLES FOR INCIDENT GROUPS & "VIEW MORE" --- */
@@ -126,7 +126,7 @@ main {
 .incident-group {
     padding-top: 10px;
     margin-top: 10px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #333;
 }
 .incident-group:first-child {
     border-top: none;
@@ -136,19 +136,19 @@ main {
 .incident-group-title {
     font-size: 1.2em;
     font-weight: bold;
-    color: #333;
+    color: #e0e0e0;
     margin-bottom: 15px;
 }
 
 .more-details {
-    margin-left: 55px; /* Aligns with the text of the items above */
+    margin-left: 55px;
 }
 
 .more-summary {
     cursor: pointer;
-    color: #007bff;
+    color: #4dabf7; /* Lighter blue for links */
     font-weight: bold;
-    list-style: none; /* Hide default marker */
+    list-style: none;
     padding: 5px 0;
     display: inline-block;
 }
@@ -172,13 +172,13 @@ main {
 }
 
 .train-alert-item.normal {
-    background-color: #e9f7ef;
-    border-left: 5px solid #28a745; /* Green */
+    background-color: #2a2a2a;
+    border-left: 5px solid #28a745; /* Green for normal */
 }
 
 .train-alert-item.disrupted {
-    background-color: #fff3e6;
-    border-left: 5px solid #ff9800; /* Orange */
+    background-color: #3b312a;
+    border-left: 5px solid #ff9800; /* Orange for disruption */
 }
 
 .train-line-icon {
@@ -207,11 +207,11 @@ main {
 /* Train Line Colors */
 .line-EWL { background-color: #009645; }
 .line-NSL { background-color: #d42e12; }
-.line-CCL { background-color: #f8d522; }
+.line-CCL { background-color: #f8d522; color: #333; } /* Dark text for yellow */
 .line-NEL { background-color: #990099; }
 .line-DTL { background-color: #005ec4; }
 .line-TEL { background-color: #9d5b25; }
-.line-LRT { background-color: #8A8D8F; } /* Generic LRT color */
+.line-LRT { background-color: #8A8D8F; }
 .line-BPL { background-color: #8A8D8F; }
 .line-SPL { background-color: #8A8D8F; }
 .line-PGL { background-color: #8A8D8F; }
@@ -228,11 +228,11 @@ main {
 }
 
 .image-item {
-    background-color: #e9f7ef;
-    border: 1px solid #d0e7d7;
+    background-color: #2a2a2a;
+    border: 1px solid #333;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     text-align: center;
     padding-bottom: 10px;
 }
@@ -241,14 +241,14 @@ main {
     max-width: 100%;
     height: auto;
     display: block;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #333;
     margin-bottom: 10px;
 }
 
 .image-item p {
     margin: 0 10px;
     font-size: 0.9em;
-    color: #555;
+    color: #ccc;
 }
 
 /* --- NEW STYLES FOR WEATHER FORECAST --- */
@@ -261,10 +261,10 @@ main {
 }
 
 .weather-period-item {
-    background-color: #f9f9f9;
+    background-color: #2a2a2a;
     padding: 15px;
     border-radius: 8px;
-    border: 1px solid #eee;
+    border: 1px solid #333;
 }
 
 .period-title {
@@ -272,7 +272,7 @@ main {
     margin-bottom: 15px;
     text-align: center;
     font-size: 1.1em;
-    color: #333;
+    color: #e0e0e0;
 }
 
 .region-forecast-list {
@@ -298,8 +298,8 @@ main {
 }
 
 .weather-overall-stats {
-    background-color: #e6f7ff;
-    border-left: 5px solid #007bff;
+    background-color: #1c2e3a; /* Darker blue background */
+    border-left: 5px solid #4dabf7;
     padding: 20px;
     border-radius: 5px;
     display: flex;
@@ -340,6 +340,7 @@ main {
 .weather-stats-item img {
     width: 24px;
     height: 24px;
+    filter: invert(1); /* Invert icons to make them visible on dark background */
 }
 
 .weather-stats-item span {
@@ -352,9 +353,9 @@ main {
 footer {
     text-align: center;
     padding: 20px;
-    color: #777;
+    color: #888;
     font-size: 0.9em;
-    background-color: #e9ecef;
-    border-top: 1px solid #dee2e6;
+    background-color: #1e1e1e;
+    border-top: 1px solid #333;
     margin-top: 30px;
 }
