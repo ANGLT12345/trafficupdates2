@@ -55,18 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const displayTrafficImages = async () => {
         imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
         
-        // Updated mapping for Camera IDs to their official locations
-        const cameraLocations = {
-            "2701": "Woodlands Causeway (Towards Johor)",
-            "2702": "Woodlands Checkpoint (Towards BKE)",
-            "4701": "Second Link at Tuas",
-            "4703": "Tuas Checkpoint",
-            "4712": "After Tuas West Road",
-            "4713": "Tuas Checkpoint (Towards AYE)"
-        };
-        const checkpointCameraIDs = Object.keys(cameraLocations);
+        // Reverted to using a simple array of camera IDs
+        const checkpointCameraIDs = [
+            "2701", "2702", "4701", "4703", "4712", "4713"
+        ];
 
-        // Corrected the API endpoint from /Traffic-Imagesv2 to /Traffic-Images
         const data = await fetchLTAData('/Traffic-Images');
         if (data && data.value && data.value.length > 0) {
             // Filter the cameras to only include the ones from our list
@@ -86,12 +79,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const parsedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
                     const updateTime = parsedDate.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-                    // Get the location name from our mapping object
-                    const locationName = cameraLocations[image.CameraID];
-
+                    // Reverted to displaying the Camera ID instead of a location name
                     imageDiv.innerHTML = `
-                        <img src="${image.ImageLink}" alt="Traffic at ${locationName}" loading="lazy">
-                        <p><strong>${locationName}</strong></p>
+                        <img src="${image.ImageLink}" alt="Traffic Camera ${image.CameraID}" loading="lazy">
+                        <p><strong>Camera ID:</strong> ${image.CameraID}</p>
                         <p>Updated: ${updateTime}</p>
                     `;
                     imagesContainer.appendChild(imageDiv);
