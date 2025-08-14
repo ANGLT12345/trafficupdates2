@@ -35,7 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
             'Fire': 'https://img.icons8.com/office/40/fire-element.png',
             'Plant Failure': 'https://img.icons8.com/office/40/factory-breakdown.png',
             'Reverse Flow': 'https://img.icons8.com/office/40/u-turn-sign.png',
-            'Blackout': 'https://img.icons8.com/office/40/shutdown.png'
+            'Blackout': 'https://img.icons8.com/office/40/shutdown.png',
+            'Faulty Light': 'https://img.icons8.com/office/40/traffic-light.png'
         };
         const defaultIcon = 'https://img.icons8.com/office/40/info.png';
 
@@ -48,15 +49,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (incidentsData && incidentsData.value) {
             allIncidents.push(...incidentsData.value);
         }
+        
+        // --- FIX: Include all faulty light types ---
         if (faultyLightsData && faultyLightsData.value) {
-            const blackouts = faultyLightsData.value
-                .filter(light => light.Type === 4) // Filter for blackouts only
-                .map(light => ({
-                    Type: 'Blackout',
-                    Message: light.Message,
-                }));
-            allIncidents.push(...blackouts);
+            const faultyLights = faultyLightsData.value.map(light => ({
+                // If Type is 4, call it a Blackout, otherwise call it a Faulty Light
+                Type: light.Type === 4 ? 'Blackout' : 'Faulty Light',
+                Message: light.Message,
+            }));
+            allIncidents.push(...faultyLights);
         }
+        // --- END OF FIX ---
 
         if (allIncidents.length === 0) {
             incidentsContainer.innerHTML = '<p>No traffic incidents reported. All clear! ✨</p>';
