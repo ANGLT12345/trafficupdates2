@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singapore Traffic Updates</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🚦 Singapore Traffic Updates 🚧</h1>
+    </header>
+    <main>
+        <section id="traffic-incidents" class="data-section">
+            <h2>Traffic Incidents</h2>
+            <div id="incidents-container" class="data-container">
+                <p>Loading traffic incidents...</p>
+            </div>
+        </section>
+
+        <section id="traffic-images" class="data-section">
+            <h2>Live Traffic Images</h2>
+            <div id="images-container" class="image-grid">
+                <p>Loading traffic images...</p>
+            </div>
+        </section>
+
+        <section id="traffic-speed-bands" class="data-section">
+            <h2>Traffic Speed Bands</h2>
+            <div id="speed-bands-container" class="data-container">
+                <p>Loading traffic speed bands...</p>
+            </div>
+        </section>
+
+        <section id="faulty-traffic-lights" class="data-section">
+            <h2>Faulty Traffic Lights</h2>
+            <div id="faulty-lights-container" class="data-container">
+                <p>Loading faulty traffic light data...</p>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>Data provided by LTA DataMall. Last updated: <span id="last-updated"></span></p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
