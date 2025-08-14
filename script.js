@@ -55,25 +55,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const displayTrafficImages = async () => {
         imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
         
-        // Mapping for Camera IDs to their locations
+        // Updated mapping for Camera IDs to their official locations
         const cameraLocations = {
-            "2701": "Woodlands Causeway (to Johor)",
-            "2702": "Woodlands Checkpoint (to BKE)",
-            "4701": "Tuas Checkpoint (to Second Link)",
-            "4702": "Tuas Checkpoint",
-            "4703": "Tuas Second Link",
+            "2701": "Woodlands Causeway (Towards Johor)",
+            "2702": "Woodlands Checkpoint (Towards BKE)",
+            "4701": "Second Link at Tuas",
+            "4703": "Tuas Checkpoint",
             "4712": "After Tuas West Road",
-            "4713": "Tuas Checkpoint (to AYE)",
-            "4714": "Tuas Second Link",
-            "4715": "Tuas Second Link",
-            "4716": "Tuas Second Link",
-            "4717": "Tuas Second Link",
-            "4718": "Tuas Second Link",
-            "4719": "Tuas Second Link"
+            "4713": "Tuas Checkpoint (Towards AYE)"
         };
         const checkpointCameraIDs = Object.keys(cameraLocations);
 
-        const data = await fetchLTAData('/Traffic-Imagesv2');
+        // Corrected the API endpoint from /Traffic-Imagesv2 to /Traffic-Images
+        const data = await fetchLTAData('/Traffic-Images');
         if (data && data.value && data.value.length > 0) {
             // Filter the cameras to only include the ones from our list
             const checkpointCameras = data.value.filter(camera => checkpointCameraIDs.includes(camera.CameraID));
@@ -84,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const imageDiv = document.createElement('div');
                     imageDiv.classList.add('image-item');
                     
-                    // --- FIX FOR INVALID DATE ---
                     // The API date format is DD/MM/YYYY HH:mm:ss, which needs custom parsing.
                     const dateTimeParts = image.CreateDate.split(' ');
                     const dateParts = dateTimeParts[0].split('/'); // [DD, MM, YYYY]
@@ -93,8 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const parsedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
                     const updateTime = parsedDate.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-                    // Get the location name from our mapping object, with a fallback
-                    const locationName = cameraLocations[image.CameraID] || `Camera ${image.CameraID}`;
+                    // Get the location name from our mapping object
+                    const locationName = cameraLocations[image.CameraID];
 
                     imageDiv.innerHTML = `
                         <img src="${image.ImageLink}" alt="Traffic at ${locationName}" loading="lazy">
