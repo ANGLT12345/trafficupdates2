@@ -130,7 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const alert = data.value;
             const status = alert.Status;
             const line = alert.Line;
-            const message = alert.Message[0].Content;
             
             trainAlertsContainer.innerHTML = ''; // Clear loading text
 
@@ -149,6 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             } else { // Disruption
+                // Safely access the message content only when there is a disruption
+                const message = (alert.Message && alert.Message[0]) ? alert.Message[0].Content : 'Details not available.';
                 alertDiv.classList.add('disrupted');
                 alertDiv.innerHTML = `
                     <div class="train-line-icon line-${lineCode}">${line}</div>
