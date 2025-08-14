@@ -1,23 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
     const incidentsContainer = document.getElementById('incidents-container');
     const imagesContainer = document.getElementById('images-container');
-    const faultyLightsContainer = document.getElementById('faulty-lights-container');
     const lastUpdatedSpan = document.getElementById('last-updated');
 
-    /**
-     * Fetches data from the LTA DataMall via our own Vercel proxy.
-     * @param {string} endpoint - The LTA API endpoint to fetch (e.g., '/TrafficIncidents').
-     * @returns {Promise<Object|null>} The JSON data from the API, or null if an error occurred.
-     */
     const fetchLTAData = async (endpoint) => {
         const proxyUrl = `/api/proxy?endpoint=${endpoint}`;
         try {
             const response = await fetch(proxyUrl);
             if (!response.ok) {
                 console.error(`Error from proxy for ${endpoint}: ${response.status} ${response.statusText}`);
-                const errorData = await response.json();
-                console.error('Error details:', errorData);
-                throw new Error(`HTTP error! status: ${response.status}`);
+                return null;
             }
             return await response.json();
         } catch (error) {
@@ -26,13 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    /**
-     * Fetches and displays traffic incidents, sorted and with icons.
-     */
     const displayTrafficIncidents = async () => {
-        incidentsContainer.innerHTML = '<p>Loading traffic incidents...</p>';
+        incidentsContainer.innerHTML = '<p>Loading all incidents...</p>';
 
-        // Icon mapping for different incident types
         const incidentIcons = {
             'Accident': 'https://img.icons8.com/office/40/car-crash.png',
             'Roadwork': 'https://img.icons8.com/office/40/road-worker.png',
@@ -46,58 +34,101 @@ document.addEventListener('DOMContentLoaded', () => {
             'Unattended Vehicle': 'https://img.icons8.com/office/40/parking.png',
             'Fire': 'https://img.icons8.com/office/40/fire-element.png',
             'Plant Failure': 'https://img.icons8.com/office/40/factory-breakdown.png',
-            'Reverse Flow': 'https://img.icons8.com/office/40/u-turn-sign.png'
+            'Reverse Flow': 'https://img.icons8.com/office/40/u-turn-sign.png',
+            'Blackout': 'https://img.icons8.com/office/40/shutdown.png'
         };
         const defaultIcon = 'https://img.icons8.com/office/40/info.png';
 
-        const data = await fetchLTAData('/TrafficIncidents');
-        if (data && data.value && data.value.length > 0) {
-            incidentsContainer.innerHTML = '';
-            
-            // Sort incidents by type to group them together
-            const sortedIncidents = data.value.sort((a, b) => a.Type.localeCompare(b.Type));
+        const [incidentsData, faultyLightsData] = await Promise.all([
+            fetchLTAData('/TrafficIncidents'),
+            fetchLTAData('/FaultyTrafficLights')
+        ]);
 
-            sortedIncidents.forEach(incident => {
+        let allIncidents = [];
+        if (incidentsData && incidentsData.value) {
+            allIncidents.push(...incidentsData.value);
+        }
+        if (faultyLightsData && faultyLightsData.value) {
+            const blackouts = faultyLightsData.value
+                .filter(light => light.Type === 4) // Filter for blackouts only
+                .map(light => ({
+                    Type: 'Blackout',
+                    Message: light.Message,
+                }));
+            allIncidents.push(...blackouts);
+        }
+
+        if (allIncidents.length === 0) {
+            incidentsContainer.innerHTML = '<p>No traffic incidents reported. All clear! ✨</p>';
+            return;
+        }
+
+        const groupedIncidents = allIncidents.reduce((acc, incident) => {
+            const type = incident.Type;
+            if (!acc[type]) acc[type] = [];
+            acc[type].push(incident);
+            return acc;
+        }, {});
+
+        incidentsContainer.innerHTML = '';
+        const sortedGroupKeys = Object.keys(groupedIncidents).sort();
+
+        for (const type of sortedGroupKeys) {
+            const incidents = groupedIncidents[type];
+            const groupContainer = document.createElement('div');
+            groupContainer.classList.add('incident-group');
+
+            const groupHeading = document.createElement('h3');
+            groupHeading.classList.add('incident-group-title');
+            groupHeading.textContent = `${type} (${incidents.length})`;
+            groupContainer.appendChild(groupHeading);
+
+            const createIncidentElement = (incident) => {
                 const incidentDiv = document.createElement('div');
                 incidentDiv.classList.add('incident-item');
                 const iconUrl = incidentIcons[incident.Type] || defaultIcon;
-
                 incidentDiv.innerHTML = `
                     <img src="${iconUrl}" alt="${incident.Type}" class="incident-icon">
                     <div class="incident-details">
-                        <p><strong>Type:</strong> ${incident.Type}</p>
                         <p><strong>Message:</strong> ${incident.Message}</p>
                     </div>
                 `;
-                incidentsContainer.appendChild(incidentDiv);
+                return incidentDiv;
+            };
+
+            incidents.slice(0, 3).forEach(incident => {
+                groupContainer.appendChild(createIncidentElement(incident));
             });
-        } else {
-            incidentsContainer.innerHTML = '<p>No traffic incidents reported. All clear! ✨</p>';
+
+            if (incidents.length > 3) {
+                const remainingCount = incidents.length - 3;
+                const details = document.createElement('details');
+                details.classList.add('more-details');
+                const summary = document.createElement('summary');
+                summary.classList.add('more-summary');
+                summary.textContent = `View ${remainingCount} more`;
+                details.appendChild(summary);
+                incidents.slice(3).forEach(incident => {
+                    details.appendChild(createIncidentElement(incident));
+                });
+                groupContainer.appendChild(details);
+            }
+            incidentsContainer.appendChild(groupContainer);
         }
     };
 
-    /**
-     * Fetches and displays live traffic images from checkpoints.
-     */
     const displayTrafficImages = async () => {
         imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
-        
-        const checkpointCameraIDs = [
-            "2701", "2702", "4703", "4701", "4713", "4702", "4712", "4714", "4715", "4716", "4717", "4718", "4719"
-        ];
-
+        const checkpointCameraIDs = ["2701", "2702", "4703", "4701", "4713", "4702", "4712", "4714", "4715", "4716", "4717", "4718", "4719"];
         const data = await fetchLTAData('/Traffic-Imagesv2');
-        if (data && data.value && data.value.length > 0) {
+        if (data && data.value) {
             const checkpointCameras = data.value.filter(camera => checkpointCameraIDs.includes(camera.CameraID));
-
             if (checkpointCameras.length > 0) {
                 imagesContainer.innerHTML = '';
                 checkpointCameras.forEach(image => {
                     const imageDiv = document.createElement('div');
                     imageDiv.classList.add('image-item');
-                    
                     const updateTime = new Date(image.CreateDate).toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
-
                     imageDiv.innerHTML = `
                         <img src="${image.ImageLink}" alt="Traffic Camera ${image.CameraID}" loading="lazy">
                         <p><strong>Camera ID:</strong> ${image.CameraID}</p>
@@ -113,55 +144,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    /**
-     * Fetches and displays faulty traffic lights.
-     */
-    const displayFaultyTrafficLights = async () => {
-        faultyLightsContainer.innerHTML = '<p>Loading faulty traffic light data...</p>';
-        const data = await fetchLTAData('/FaultyTrafficLights');
-        if (data && data.value && data.value.length > 0) {
-            faultyLightsContainer.innerHTML = '';
-            data.value.forEach(light => {
-                const faultyLightDiv = document.createElement('div');
-                faultyLightDiv.classList.add('faulty-light-item');
-                faultyLightDiv.innerHTML = `
-                    <p><strong>Details:</strong> ${light.Message}</p>
-                    <p><strong>Reported on:</strong> ${new Date(light.StartDate).toLocaleString()}</p>
-                `;
-                faultyLightsContainer.appendChild(faultyLightDiv);
-            });
-        } else {
-            faultyLightsContainer.innerHTML = '<p>No faulty traffic lights reported. 🟢</p>';
-        }
-    };
-
-    /**
-     * Calls all data-fetching functions to populate the page.
-     */
     const updateAllData = () => {
         displayTrafficIncidents();
         displayTrafficImages();
-        displayFaultyTrafficLights();
         lastUpdatedSpan.textContent = new Date().toLocaleString();
     };
 
-    // --- ACCORDION LOGIC ---
     const detailsElements = document.querySelectorAll('details.data-section');
     detailsElements.forEach(details => {
-        details.addEventListener('toggle', event => {
+        details.addEventListener('toggle', () => {
             if (details.open) {
                 detailsElements.forEach(otherDetails => {
-                    if (otherDetails !== details) {
-                        otherDetails.open = false;
-                    }
+                    if (otherDetails !== details) otherDetails.open = false;
                 });
             }
         });
     });
 
-    // Initial load
     updateAllData();
-
-    // Refresh data every 5 minutes
     setInterval(updateAllData, 300000);
 });

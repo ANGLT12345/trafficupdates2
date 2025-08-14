@@ -11,8 +11,7 @@
         <h1>🚦 Singapore Traffic Updates 🚧</h1>
     </header>
     <main>
-        <!-- The sections are now wrapped in <details> tags to make them collapsible. -->
-        <!-- The `open` attribute on the first one makes it open by default. -->
+        <!-- The main section for all incidents -->
         <details class="data-section" open>
             <summary>
                 <h2>Traffic Incidents</h2>
@@ -22,6 +21,7 @@
             </div>
         </details>
 
+        <!-- The traffic images section remains the same -->
         <details class="data-section">
             <summary>
                 <h2>Live Traffic Images</h2>
@@ -31,14 +31,7 @@
             </div>
         </details>
 
-        <details class="data-section">
-            <summary>
-                <h2>Faulty Traffic Lights</h2>
-            </summary>
-            <div id="faulty-lights-container" class="data-container">
-                <p>Loading faulty traffic light data...</p>
-            </div>
-        </details>
+        <!-- The Faulty Traffic Lights section has been removed -->
     </main>
     <footer>
         <p>Data provided by LTA DataMall. Last updated: <span id="last-updated"></span></p>

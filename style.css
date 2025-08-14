@@ -88,7 +88,7 @@ main {
     color: #666;
 }
 
-/* --- NEW STYLES FOR INCIDENT ICONS --- */
+/* --- UPDATED STYLES FOR INCIDENTS --- */
 
 .incident-item {
     background-color: #e9f7ef;
@@ -96,21 +96,20 @@ main {
     padding: 15px;
     margin-bottom: 10px;
     border-radius: 5px;
-    /* Use flexbox for alignment */
     display: flex;
     align-items: center;
-    gap: 15px; /* Space between icon and text */
+    gap: 15px;
 }
 
 .incident-icon {
     width: 40px;
     height: 40px;
-    flex-shrink: 0; /* Prevents the icon from shrinking */
+    flex-shrink: 0;
 }
 
 .incident-details p {
     margin: 0;
-    text-align: left; /* Align text to the left */
+    text-align: left;
     font-style: normal;
 }
 
@@ -118,12 +117,51 @@ main {
     margin-bottom: 5px;
 }
 
-/* --- END OF NEW STYLES --- */
-
-
-.incident-item strong, .faulty-light-item strong {
+.incident-item strong {
     color: #28a745;
 }
+
+/* --- NEW STYLES FOR INCIDENT GROUPS & "VIEW MORE" --- */
+
+.incident-group {
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px solid #eee;
+}
+.incident-group:first-child {
+    border-top: none;
+    margin-top: 0;
+}
+
+.incident-group-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.more-details {
+    margin-left: 55px; /* Aligns with the text of the items above */
+}
+
+.more-summary {
+    cursor: pointer;
+    color: #007bff;
+    font-weight: bold;
+    list-style: none; /* Hide default marker */
+    padding: 5px 0;
+    display: inline-block;
+}
+
+.more-summary::-webkit-details-marker {
+    display: none;
+}
+
+.more-details[open] > .more-summary {
+    margin-bottom: 10px;
+}
+
+/* --- END OF NEW STYLES --- */
 
 .image-grid {
     display: grid;
@@ -154,18 +192,6 @@ main {
     margin: 0 10px;
     font-size: 0.9em;
     color: #555;
-}
-
-.faulty-light-item {
-    background-color: #fff3e6;
-    border-left-color: #ffc107;
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-}
-
-.faulty-light-item strong {
-    color: #ffc107;
 }
 
 footer {
