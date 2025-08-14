@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span>${tempLow}°C - ${tempHigh}°C</span>
                             </div>
                             <div class="weather-stats-item">
-                                <img src="https://img.icons8.com/material-outlined/24/hygrometer.png" alt="Humidity">
+                                <img src="https://img.icons8.com/?size=100&id=15365&format=png&color=000000" alt="Humidity">
                                 <span>${humidityLow}% - ${humidityHigh}%</span>
                             </div>
                             <div class="weather-stats-item">
