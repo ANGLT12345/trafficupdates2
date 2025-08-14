@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const incidentsContainer = document.getElementById('incidents-container');
     const imagesContainer = document.getElementById('images-container');
+    const weatherContainer = document.getElementById('weather-forecast-container');
     const lastUpdatedSpan = document.getElementById('last-updated');
 
     const fetchLTAData = async (endpoint) => {
@@ -88,13 +89,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 incidentDiv.classList.add('incident-item');
                 const iconUrl = incidentIcons[incident.Type] || defaultIcon;
                 
-                // Use a regular expression to remove the (DD/MM)HH:mm prefix
                 const cleanedMessage = incident.Message.replace(/^\(\d{2}\/\d{2}\)\d{2}:\d{2}\s*/, '');
 
                 incidentDiv.innerHTML = `
                     <img src="${iconUrl}" alt="${incident.Type}" class="incident-icon">
                     <div class="incident-details">
-                        <p>${cleanedMessage}</p>
+                        <p><strong>Message:</strong> ${cleanedMessage}</p>
                     </div>
                 `;
                 return incidentDiv;
@@ -148,9 +148,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const displayWeatherForecast = async () => {
+        weatherContainer.innerHTML = '<p>Loading weather forecast...</p>';
+        const WEATHER_API_URL = 'https://api.data.gov.sg/v1/environment/24-hour-weather-forecast';
+
+        try {
+            const response = await fetch(WEATHER_API_URL);
+            if (!response.ok) {
+                throw new Error(`Weather API error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            if (data.items && data.items.length > 0) {
+                const forecastData = data.items[0];
+                const generalForecast = forecastData.general.forecast;
+                const tempLow = forecastData.general.temperature.low;
+                const tempHigh = forecastData.general.temperature.high;
+
+                let weatherIcon = 'https://img.icons8.com/office/80/partly-cloudy-day.png';
+                if (generalForecast.toLowerCase().includes('rain') || generalForecast.toLowerCase().includes('showers')) {
+                    weatherIcon = 'https://img.icons8.com/office/80/rain.png';
+                } else if (generalForecast.toLowerCase().includes('thundery')) {
+                    weatherIcon = 'https://img.icons8.com/office/80/cloud-lighting.png';
+                } else if (generalForecast.toLowerCase().includes('cloudy')) {
+                    weatherIcon = 'https://img.icons8.com/office/80/cloud.png';
+                }
+
+                weatherContainer.innerHTML = `
+                    <div class="weather-forecast-item">
+                        <img src="${weatherIcon}" alt="Weather icon">
+                        <p>${generalForecast}</p>
+                        <p class="temperature">${tempLow}°C - ${tempHigh}°C</p>
+                    </div>
+                `;
+            } else {
+                weatherContainer.innerHTML = '<p>Weather forecast data is currently unavailable.</p>';
+            }
+
+        } catch (error) {
+            console.error('Error fetching weather forecast:', error);
+            weatherContainer.innerHTML = '<p>Could not load weather forecast.</p>';
+        }
+    };
+
     const updateAllData = () => {
         displayTrafficIncidents();
         displayTrafficImages();
+        displayWeatherForecast();
         lastUpdatedSpan.textContent = new Date().toLocaleString();
     };
 
