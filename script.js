@@ -27,20 +27,47 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * Fetches and displays traffic incidents.
+     * Fetches and displays traffic incidents, sorted and with icons.
      */
     const displayTrafficIncidents = async () => {
         incidentsContainer.innerHTML = '<p>Loading traffic incidents...</p>';
+
+        // Icon mapping for different incident types
+        const incidentIcons = {
+            'Accident': 'https://img.icons8.com/office/40/car-crash.png',
+            'Roadwork': 'https://img.icons8.com/office/40/road-worker.png',
+            'Vehicle breakdown': 'https://img.icons8.com/office/40/tow-truck.png',
+            'Weather': 'https://img.icons8.com/office/40/partly-cloudy-day.png',
+            'Obstacle': 'https://img.icons8.com/office/40/traffic-cone.png',
+            'Road Block': 'https://img.icons8.com/office/40/road-barrier.png',
+            'Heavy Traffic': 'https://img.icons8.com/office/40/traffic-jam.png',
+            'Miscellaneous': 'https://img.icons8.com/office/40/info.png',
+            'Diversion': 'https://img.icons8.com/office/40/waypoint-map.png',
+            'Unattended Vehicle': 'https://img.icons8.com/office/40/parking.png',
+            'Fire': 'https://img.icons8.com/office/40/fire-element.png',
+            'Plant Failure': 'https://img.icons8.com/office/40/factory-breakdown.png',
+            'Reverse Flow': 'https://img.icons8.com/office/40/u-turn-sign.png'
+        };
+        const defaultIcon = 'https://img.icons8.com/office/40/info.png';
+
         const data = await fetchLTAData('/TrafficIncidents');
         if (data && data.value && data.value.length > 0) {
             incidentsContainer.innerHTML = '';
-            data.value.forEach(incident => {
+            
+            // Sort incidents by type to group them together
+            const sortedIncidents = data.value.sort((a, b) => a.Type.localeCompare(b.Type));
+
+            sortedIncidents.forEach(incident => {
                 const incidentDiv = document.createElement('div');
                 incidentDiv.classList.add('incident-item');
+                const iconUrl = incidentIcons[incident.Type] || defaultIcon;
+
                 incidentDiv.innerHTML = `
-                    <p><strong>Type:</strong> ${incident.Type}</p>
-                    <p><strong>Message:</strong> ${incident.Message}</p>
-                    <p><strong>Location:</strong> Lat ${incident.Latitude}, Lon ${incident.Longitude}</p>
+                    <img src="${iconUrl}" alt="${incident.Type}" class="incident-icon">
+                    <div class="incident-details">
+                        <p><strong>Type:</strong> ${incident.Type}</p>
+                        <p><strong>Message:</strong> ${incident.Message}</p>
+                    </div>
                 `;
                 incidentsContainer.appendChild(incidentDiv);
             });
@@ -55,14 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const displayTrafficImages = async () => {
         imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
         
-        // Define the camera IDs for Woodlands and Tuas checkpoints
         const checkpointCameraIDs = [
             "2701", "2702", "4703", "4701", "4713", "4702", "4712", "4714", "4715", "4716", "4717", "4718", "4719"
         ];
 
         const data = await fetchLTAData('/Traffic-Imagesv2');
         if (data && data.value && data.value.length > 0) {
-            // Filter the cameras to only include the ones from our list
             const checkpointCameras = data.value.filter(camera => checkpointCameraIDs.includes(camera.CameraID));
 
             if (checkpointCameras.length > 0) {
@@ -71,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const imageDiv = document.createElement('div');
                     imageDiv.classList.add('image-item');
                     
-                    // Extract the time from the CreateDate string
                     const updateTime = new Date(image.CreateDate).toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
 
                     imageDiv.innerHTML = `
@@ -121,31 +145,23 @@ document.addEventListener('DOMContentLoaded', () => {
         lastUpdatedSpan.textContent = new Date().toLocaleString();
     };
 
-    // --- NEW CODE FOR ACCORDION ---
-    // Get all the <details> elements
+    // --- ACCORDION LOGIC ---
     const detailsElements = document.querySelectorAll('details.data-section');
-
     detailsElements.forEach(details => {
-        // Add an event listener for the 'toggle' event
         details.addEventListener('toggle', event => {
-            // If the section was opened...
             if (details.open) {
-                // ...loop through all sections again...
                 detailsElements.forEach(otherDetails => {
-                    // ...and if it's not the one that was just opened...
                     if (otherDetails !== details) {
-                        // ...close it.
                         otherDetails.open = false;
                     }
                 });
             }
         });
     });
-    // --- END OF NEW CODE ---
 
     // Initial load
     updateAllData();
 
-    // Refresh data every 5 minutes (300,000 milliseconds)
+    // Refresh data every 5 minutes
     setInterval(updateAllData, 300000);
 });
