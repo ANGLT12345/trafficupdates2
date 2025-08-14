@@ -50,16 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
             allIncidents.push(...incidentsData.value);
         }
         
-        // --- FIX: Include all faulty light types ---
         if (faultyLightsData && faultyLightsData.value) {
             const faultyLights = faultyLightsData.value.map(light => ({
-                // If Type is 4, call it a Blackout, otherwise call it a Faulty Light
                 Type: light.Type === 4 ? 'Blackout' : 'Faulty Light',
                 Message: light.Message,
             }));
             allIncidents.push(...faultyLights);
         }
-        // --- END OF FIX ---
 
         if (allIncidents.length === 0) {
             incidentsContainer.innerHTML = '<p>No traffic incidents reported. All clear! ✨</p>';
@@ -90,10 +87,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const incidentDiv = document.createElement('div');
                 incidentDiv.classList.add('incident-item');
                 const iconUrl = incidentIcons[incident.Type] || defaultIcon;
+                
+                // Use a regular expression to remove the (DD/MM)HH:mm prefix
+                const cleanedMessage = incident.Message.replace(/^\(\d{2}\/\d{2}\)\d{2}:\d{2}\s*/, '');
+
                 incidentDiv.innerHTML = `
                     <img src="${iconUrl}" alt="${incident.Type}" class="incident-icon">
                     <div class="incident-details">
-                        <p><strong>Message:</strong> ${incident.Message}</p>
+                        <p><strong>Message:</strong> ${cleanedMessage}</p>
                     </div>
                 `;
                 return incidentDiv;
