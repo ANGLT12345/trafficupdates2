@@ -11,26 +11,34 @@
         <h1>🚦 Singapore Traffic Updates 🚧</h1>
     </header>
     <main>
-        <section id="traffic-incidents" class="data-section">
-            <h2>Traffic Incidents</h2>
+        <!-- The sections are now wrapped in <details> tags to make them collapsible. -->
+        <!-- The `open` attribute on the first one makes it open by default. -->
+        <details class="data-section" open>
+            <summary>
+                <h2>Traffic Incidents</h2>
+            </summary>
             <div id="incidents-container" class="data-container">
                 <p>Loading traffic incidents...</p>
             </div>
-        </section>
+        </details>
 
-        <section id="traffic-images" class="data-section">
-            <h2>Live Traffic Images</h2>
+        <details class="data-section">
+            <summary>
+                <h2>Live Traffic Images</h2>
+            </summary>
             <div id="images-container" class="image-grid">
                 <p>Loading traffic images...</p>
             </div>
-        </section>
+        </details>
 
-        <section id="faulty-traffic-lights" class="data-section">
-            <h2>Faulty Traffic Lights</h2>
+        <details class="data-section">
+            <summary>
+                <h2>Faulty Traffic Lights</h2>
+            </summary>
             <div id="faulty-lights-container" class="data-container">
                 <p>Loading faulty traffic light data...</p>
             </div>
-        </section>
+        </details>
     </main>
     <footer>
         <p>Data provided by LTA DataMall. Last updated: <span id="last-updated"></span></p>

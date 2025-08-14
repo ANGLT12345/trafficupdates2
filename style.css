@@ -24,25 +24,66 @@ main {
     padding: 20px;
     max-width: 1200px;
     margin: 20px auto;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
+/* --- STYLES FOR COLLAPSIBLE ACCORDION --- */
+
 .data-section {
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 10px;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     background-color: #fdfdfd;
+    transition: padding 0.2s ease-out;
 }
 
-.data-section h2 {
-    color: #007bff; /* Blue for section titles */
-    margin-top: 0;
-    border-bottom: 2px solid #007bff;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+.data-section[open] {
+    padding-bottom: 20px;
+}
+
+.data-section summary {
+    padding: 20px;
+    cursor: pointer;
+    outline: none;
+    list-style: none; /* Removes default triangle marker */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.data-section summary:hover {
+    background-color: #f0f0f0;
+}
+
+.data-section summary::-webkit-details-marker {
+    display: none; /* Hides marker in WebKit browsers */
+}
+
+.data-section summary h2 {
+    color: #007bff;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* Custom plus/minus icon */
+.data-section summary::after {
+    content: '+';
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #007bff;
+    transition: transform 0.2s ease-in-out;
+}
+
+.data-section[open] summary::after {
+    content: '−'; /* Minus sign for open state */
+}
+
+/* --- END OF ACCORDION STYLES --- */
+
+
+.data-container, .image-grid {
+    padding: 0 20px;
 }
 
 .data-container p, .image-grid p {
@@ -51,15 +92,15 @@ main {
     color: #666;
 }
 
-.incident-item, .speed-band-item, .faulty-light-item {
-    background-color: #e9f7ef; /* Light green for items */
+.incident-item, .faulty-light-item {
+    background-color: #e9f7ef;
     border-left: 5px solid #28a745;
     padding: 15px;
     margin-bottom: 10px;
     border-radius: 5px;
 }
 
-.incident-item strong, .speed-band-item strong, .faulty-light-item strong {
+.incident-item strong, .faulty-light-item strong {
     color: #28a745;
 }
 
@@ -94,18 +135,9 @@ main {
     color: #555;
 }
 
-.speed-band-item {
-    background-color: #e6f7ff; /* Light blue for speed bands */
-    border-left-color: #007bff;
-}
-
-.speed-band-item strong {
-    color: #007bff;
-}
-
 .faulty-light-item {
-    background-color: #fff3e6; /* Light orange for faulty lights */
-    border-left-color: #ffc107; /* Orange for warning */
+    background-color: #fff3e6;
+    border-left-color: #ffc107;
 }
 
 .faulty-light-item strong {

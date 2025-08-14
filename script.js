@@ -1,7 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // No API Key is needed in the client-side code anymore.
-    // It will be handled securely by the serverless function.
-
     const incidentsContainer = document.getElementById('incidents-container');
     const imagesContainer = document.getElementById('images-container');
     const faultyLightsContainer = document.getElementById('faulty-lights-container');
@@ -13,13 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {Promise<Object|null>} The JSON data from the API, or null if an error occurred.
      */
     const fetchLTAData = async (endpoint) => {
-        // The new URL points to our own serverless function proxy.
-        // We pass the target LTA endpoint as a query parameter.
         const proxyUrl = `/api/proxy?endpoint=${endpoint}`;
         try {
             const response = await fetch(proxyUrl);
             if (!response.ok) {
-                // Log the error for debugging but don't stop the other sections from loading.
                 console.error(`Error from proxy for ${endpoint}: ${response.status} ${response.statusText}`);
                 const errorData = await response.json();
                 console.error('Error details:', errorData);
@@ -28,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return await response.json();
         } catch (error) {
             console.error(`Failed to fetch data from endpoint: ${endpoint}`, error);
-            return null; // Return null to allow other parts of the app to function.
+            return null;
         }
     };
 
@@ -63,9 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await fetchLTAData('/Traffic-Imagesv2');
         if (data && data.value && data.value.length > 0) {
             imagesContainer.innerHTML = '';
-            // To avoid overwhelming the page, let's show a random subset of cameras
             const shuffled = data.value.sort(() => 0.5 - Math.random());
-            const selected = shuffled.slice(0, 20); // Show up to 20 images
+            const selected = shuffled.slice(0, 20);
 
             selected.forEach(image => {
                 const imageDiv = document.createElement('div');
@@ -92,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
             data.value.forEach(light => {
                 const faultyLightDiv = document.createElement('div');
                 faultyLightDiv.classList.add('faulty-light-item');
-                // Updated to show the descriptive message from the API
                 faultyLightDiv.innerHTML = `
                     <p><strong>Details:</strong> ${light.Message}</p>
                     <p><strong>Reported on:</strong> ${new Date(light.StartDate).toLocaleString()}</p>
@@ -110,10 +102,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateAllData = () => {
         displayTrafficIncidents();
         displayTrafficImages();
-        // The call to displayTrafficSpeedBands() has been removed.
         displayFaultyTrafficLights();
         lastUpdatedSpan.textContent = new Date().toLocaleString();
     };
+
+    // --- NEW CODE FOR ACCORDION ---
+    // Get all the <details> elements
+    const detailsElements = document.querySelectorAll('details.data-section');
+
+    detailsElements.forEach(details => {
+        // Add an event listener for the 'toggle' event
+        details.addEventListener('toggle', event => {
+            // If the section was opened...
+            if (details.open) {
+                // ...loop through all sections again...
+                detailsElements.forEach(otherDetails => {
+                    // ...and if it's not the one that was just opened...
+                    if (otherDetails !== details) {
+                        // ...close it.
+                        otherDetails.open = false;
+                    }
+                });
+            }
+        });
+    });
+    // --- END OF NEW CODE ---
 
     // Initial load
     updateAllData();
