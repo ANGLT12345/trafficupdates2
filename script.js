@@ -55,12 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const displayTrafficImages = async () => {
         imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
         
-        // Reverted to using a simple array of camera IDs
+        // Define the camera IDs for Woodlands and Tuas checkpoints
         const checkpointCameraIDs = [
-            "2701", "2702", "4701", "4703", "4712", "4713"
+            "2701", "2702", "4703", "4701", "4713", "4702", "4712", "4714", "4715", "4716", "4717", "4718", "4719"
         ];
 
-        const data = await fetchLTAData('/Traffic-Images');
+        const data = await fetchLTAData('/Traffic-Imagesv2');
         if (data && data.value && data.value.length > 0) {
             // Filter the cameras to only include the ones from our list
             const checkpointCameras = data.value.filter(camera => checkpointCameraIDs.includes(camera.CameraID));
@@ -71,19 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const imageDiv = document.createElement('div');
                     imageDiv.classList.add('image-item');
                     
-                    // The API date format is DD/MM/YYYY HH:mm:ss, which needs custom parsing.
-                    const dateTimeParts = image.CreateDate.split(' ');
-                    const dateParts = dateTimeParts[0].split('/'); // [DD, MM, YYYY]
-                    const timeParts = dateTimeParts[1].split(':'); // [HH, mm, ss]
-                    // Format for new Date(): new Date(year, month-1, day, hour, minute, second)
-                    const parsedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
-                    const updateTime = parsedDate.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    // Extract the time from the CreateDate string
+                    const updateTime = new Date(image.CreateDate).toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-                    // Reverted to displaying the Camera ID instead of a location name
                     imageDiv.innerHTML = `
                         <img src="${image.ImageLink}" alt="Traffic Camera ${image.CameraID}" loading="lazy">
                         <p><strong>Camera ID:</strong> ${image.CameraID}</p>
-                        <p>Updated: ${updateTime}</p>
+                        <p><strong>Updated:</strong> ${updateTime}</p>
                     `;
                     imagesContainer.appendChild(imageDiv);
                 });
@@ -127,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lastUpdatedSpan.textContent = new Date().toLocaleString();
     };
 
-    // --- ACCORDION LOGIC ---
+    // --- NEW CODE FOR ACCORDION ---
     // Get all the <details> elements
     const detailsElements = document.querySelectorAll('details.data-section');
 
@@ -147,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    // --- END OF ACCORDION LOGIC ---
+    // --- END OF NEW CODE ---
 
     // Initial load
     updateAllData();
