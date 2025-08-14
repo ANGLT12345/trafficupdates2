@@ -3,7 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const imagesContainer = document.getElementById('images-container');
     const weatherContainer = document.getElementById('weather-forecast-container');
     const trainAlertsContainer = document.getElementById('train-alerts-container');
+    const advisoryMessage = document.getElementById('advisory-message');
     const lastUpdatedSpan = document.getElementById('last-updated');
+
+    let advisoryInterval; // To hold the interval timer for the carousel
 
     const fetchLTAData = async (endpoint) => {
         const proxyUrl = `/api/proxy?endpoint=${endpoint}`;
@@ -20,11 +23,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const displayAdvisoryCarousel = async () => {
+        if (advisoryInterval) clearInterval(advisoryInterval); // Clear previous interval
+
+        const data = await fetchLTAData('/VMS');
+        if (data && data.value && data.value.length > 0) {
+            const messages = data.value
+                .map(item => item.Message)
+                .filter(msg => msg && msg.length > 10 && !msg.toLowerCase().includes('test'));
+
+            if (messages.length === 0) {
+                advisoryMessage.textContent = 'No major advisories at the moment.';
+                return;
+            }
+
+            let currentIndex = 0;
+            advisoryMessage.textContent = messages[currentIndex];
+
+            advisoryInterval = setInterval(() => {
+                advisoryMessage.classList.add('fade-out');
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % messages.length;
+                    advisoryMessage.textContent = messages[currentIndex];
+                    advisoryMessage.classList.remove('fade-out');
+                }, 500); // Corresponds to CSS transition time
+            }, 5000); // Change message every 5 seconds
+        } else {
+            advisoryMessage.textContent = 'Advisories currently unavailable.';
+        }
+    };
+
     const displayTrafficIncidents = async () => {
         incidentsContainer.innerHTML = '<p>Loading all incidents...</p>';
 
         const incidentIcons = {
-            'Accident': 'https://cdn-icons-png.flaticon.com/512/4852/4852243.png',
+            'Accident': 'https://img.icons8.com/office/40/car-crash.png',
             'Roadwork': 'https://img.icons8.com/office/40/road-worker.png',
             'Vehicle breakdown': 'https://img.icons8.com/office/40/tow-truck.png',
             'Weather': 'https://img.icons8.com/office/40/partly-cloudy-day.png',
@@ -126,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         trainAlertsContainer.innerHTML = '<p>Loading train service alerts...</p>';
         const data = await fetchLTAData('/TrainServiceAlerts');
 
-        // A master list of all train lines to ensure all are displayed
         const allTrainLines = [
             { name: 'North-South Line', code: 'NSL' },
             { name: 'East-West Line', code: 'EWL' },
@@ -139,11 +171,9 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: 'Punggol LRT', code: 'PGL' }
         ];
 
-        // Store active disruptions in a map for easy lookup
         const disruptions = {};
         if (data && data.value && data.value.length > 0) {
             data.value.forEach(alert => {
-                // The API can list multiple affected lines in one message, e.g., "NSL, EWL"
                 const affectedLines = alert.Line.split(',');
                 affectedLines.forEach(lineCode => {
                     const trimmedCode = lineCode.trim();
@@ -152,9 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        trainAlertsContainer.innerHTML = ''; // Clear loading text
+        trainAlertsContainer.innerHTML = '';
 
-        // Iterate through the master list to display status for every line
         allTrainLines.forEach(line => {
             const alertDiv = document.createElement('div');
             alertDiv.classList.add('train-alert-item');
@@ -162,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const lineCode = line.code;
             const disruptionMessage = disruptions[lineCode];
 
-            if (disruptionMessage) { // If there is a disruption for this line
+            if (disruptionMessage) {
                 alertDiv.classList.add('disrupted');
                 alertDiv.innerHTML = `
                     <div class="train-line-icon line-${lineCode}">${lineCode}</div>
@@ -171,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>${disruptionMessage}</p>
                     </div>
                 `;
-            } else { // Normal service for this line
+            } else {
                 alertDiv.classList.add('normal');
                 alertDiv.innerHTML = `
                     <div class="train-line-icon line-${lineCode}">${lineCode}</div>
@@ -321,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateAllData = () => {
+        displayAdvisoryCarousel();
         displayTrafficIncidents();
         displayTrainServiceAlerts();
         displayTrafficImages();

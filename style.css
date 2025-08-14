@@ -20,6 +20,37 @@ h1 {
     font-size: 2.2em;
 }
 
+/* --- NEW STYLES FOR ADVISORY CAROUSEL --- */
+#advisory-carousel-container {
+    background-color: #1c2e3a;
+    color: #e0e0e0;
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 1.1em;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    height: 48px; /* Fixed height to prevent layout shift */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+#advisory-message {
+    margin: 0;
+    font-style: normal;
+    color: #e0e0e0;
+    width: 100%;
+    transition: opacity 0.5s ease-in-out;
+}
+
+#advisory-message.fade-out {
+    opacity: 0;
+}
+/* --- END OF CAROUSEL STYLES --- */
+
 main {
     padding: 20px;
     max-width: 1200px;
