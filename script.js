@@ -160,25 +160,37 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (data.items && data.items.length > 0) {
-                const forecastData = data.items[0];
-                const generalForecast = forecastData.general.forecast;
-                const tempLow = forecastData.general.temperature.low;
-                const tempHigh = forecastData.general.temperature.high;
-
-                let weatherIcon = 'https://img.icons8.com/office/80/partly-cloudy-day.png';
-                if (generalForecast.toLowerCase().includes('rain') || generalForecast.toLowerCase().includes('showers')) {
-                    weatherIcon = 'https://img.icons8.com/office/80/rain.png';
-                } else if (generalForecast.toLowerCase().includes('thundery')) {
-                    weatherIcon = 'https://img.icons8.com/office/80/cloud-lighting.png';
-                } else if (generalForecast.toLowerCase().includes('cloudy')) {
-                    weatherIcon = 'https://img.icons8.com/office/80/cloud.png';
-                }
+                const forecastData = data.items[0].general;
+                
+                const generalForecast = forecastData.forecast;
+                const tempLow = forecastData.temperature.low;
+                const tempHigh = forecastData.temperature.high;
+                const humidityLow = forecastData.relative_humidity.low;
+                const humidityHigh = forecastData.relative_humidity.high;
+                const windSpeedLow = forecastData.wind.speed.low;
+                const windSpeedHigh = forecastData.wind.speed.high;
+                const windDirection = forecastData.wind.direction;
 
                 weatherContainer.innerHTML = `
                     <div class="weather-forecast-item">
-                        <img src="${weatherIcon}" alt="Weather icon">
-                        <p>${generalForecast}</p>
-                        <p class="temperature">${tempLow}°C - ${tempHigh}°C</p>
+                        <div class="weather-text">
+                            <p><strong>24-hour Forecast</strong></p>
+                            <p>${generalForecast}</p>
+                        </div>
+                        <div class="weather-stats">
+                            <div class="weather-stats-item">
+                                <img src="https://img.icons8.com/material-outlined/24/thermometer.png" alt="Temperature">
+                                <span>${tempLow}°C - ${tempHigh}°C</span>
+                            </div>
+                            <div class="weather-stats-item">
+                                <img src="https://img.icons8.com/material-outlined/24/hygrometer.png" alt="Humidity">
+                                <span>${humidityLow}% - ${humidityHigh}%</span>
+                            </div>
+                            <div class="weather-stats-item">
+                                <img src="https://img.icons8.com/material-outlined/24/wind.png" alt="Wind">
+                                <span>${windDirection} ${windSpeedLow} - ${windSpeedHigh} km/h</span>
+                            </div>
+                        </div>
                     </div>
                 `;
             } else {
