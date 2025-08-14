@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const API_KEY = 'VROVFNeMSI+qIQ4o/OLuNw=='; // Your API Key
-    const BASE_URL = 'https://datamall2.mytransport.sg/ltaodataservice';
+    // No API Key is needed in the client-side code anymore.
+    // It will be handled securely by the serverless function.
 
     const incidentsContainer = document.getElementById('incidents-container');
     const imagesContainer = document.getElementById('images-container');
@@ -8,24 +8,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const faultyLightsContainer = document.getElementById('faulty-lights-container');
     const lastUpdatedSpan = document.getElementById('last-updated');
 
+    /**
+     * Fetches data from the LTA DataMall via our own Vercel proxy.
+     * @param {string} endpoint - The LTA API endpoint to fetch (e.g., '/TrafficIncidents').
+     * @returns {Promise<Object|null>} The JSON data from the API, or null if an error occurred.
+     */
     const fetchLTAData = async (endpoint) => {
+        // The new URL points to our own serverless function proxy.
+        // We pass the target LTA endpoint as a query parameter.
+        const proxyUrl = `/api/proxy?endpoint=${endpoint}`;
         try {
-            const response = await fetch(`${BASE_URL}${endpoint}`, {
-                headers: {
-                    'AccountKey': 'VROVFNeMSI+qIQ4o/OLuNw==',
-                    'accept': 'application/json'
-                }
-            });
+            const response = await fetch(proxyUrl);
             if (!response.ok) {
+                // Log the error for debugging but don't stop the other sections from loading.
+                console.error(`Error from proxy for ${endpoint}: ${response.status} ${response.statusText}`);
+                const errorData = await response.json();
+                console.error('Error details:', errorData);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return await response.json();
         } catch (error) {
-            console.error(`Error fetching data from ${endpoint}:`, error);
-            return null;
+            console.error(`Failed to fetch data from endpoint: ${endpoint}`, error);
+            return null; // Return null to allow other parts of the app to function.
         }
     };
 
+    /**
+     * Fetches and displays traffic incidents.
+     */
     const displayTrafficIncidents = async () => {
         incidentsContainer.innerHTML = '<p>Loading traffic incidents...</p>';
         const data = await fetchLTAData('/TrafficIncidents');
@@ -46,18 +56,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    /**
+     * Fetches and displays live traffic images.
+     */
     const displayTrafficImages = async () => {
         imagesContainer.innerHTML = '<p>Loading live traffic images...</p>';
         const data = await fetchLTAData('/Traffic-Imagesv2');
         if (data && data.value && data.value.length > 0) {
             imagesContainer.innerHTML = '';
-            data.value.forEach(image => {
+            // To avoid overwhelming the page, let's show a random subset of cameras
+            const shuffled = data.value.sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 20); // Show up to 20 images
+
+            selected.forEach(image => {
                 const imageDiv = document.createElement('div');
                 imageDiv.classList.add('image-item');
                 imageDiv.innerHTML = `
-                    <img src="${image.ImageLink}" alt="Traffic Camera ${image.CameraID}">
+                    <img src="${image.ImageLink}" alt="Traffic Camera ${image.CameraID}" loading="lazy">
                     <p><strong>Camera ID:</strong> ${image.CameraID}</p>
-                    <p><strong>Location:</strong> Lat ${image.Latitude}, Lon ${image.Longitude}</p>
                 `;
                 imagesContainer.appendChild(imageDiv);
             });
@@ -66,6 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    /**
+     * Fetches and displays traffic speed bands.
+     */
     const displayTrafficSpeedBands = async () => {
         speedBandsContainer.innerHTML = '<p>Loading traffic speed bands...</p>';
         const data = await fetchLTAData('/v4/TrafficSpeedBands');
@@ -75,10 +94,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const speedBandDiv = document.createElement('div');
                 speedBandDiv.classList.add('speed-band-item');
                 speedBandDiv.innerHTML = `
-                    <p><strong>Road:</strong> ${band.RoadName} (ID: ${band.LinkID})</p>
+                    <p><strong>Road:</strong> ${band.RoadName}</p>
                     <p><strong>Category:</strong> ${band.RoadCategory}</p>
                     <p><strong>Speed:</strong> ${band.MinimumSpeed}-${band.MaximumSpeed} km/h (Band: ${band.SpeedBand})</p>
-                    <p><strong>Location:</strong> Start Lat ${band.StartLat}, Start Lon ${band.StartLon} | End Lat ${band.EndLat}, End Lon ${band.EndLon}</p>
                 `;
                 speedBandsContainer.appendChild(speedBandDiv);
             });
@@ -87,6 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    /**
+     * Fetches and displays faulty traffic lights.
+     */
     const displayFaultyTrafficLights = async () => {
         faultyLightsContainer.innerHTML = '<p>Loading faulty traffic light data...</p>';
         const data = await fetchLTAData('/FaultyTrafficLights');
@@ -98,10 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 faultyLightDiv.innerHTML = `
                     <p><strong>Alarm ID:</strong> ${light.AlarmID}</p>
                     <p><strong>Node ID:</strong> ${light.NodeID}</p>
-                    <p><strong>Type:</strong> ${light.Type === 4 ? 'Blackout' : (light.Type === 13 ? 'Flashing Yellow' : light.Type)}</p>
-                    <p><strong>Message:</strong> ${light.Message}</p>
-                    <p><strong>Start Date:</strong> ${light.StartDate}</p>
-                    ${light.EndDate ? `<p><strong>End Date:</strong> ${light.EndDate}</p>` : ''}
+                    <p><strong>Type:</strong> ${light.Type === 4 ? 'Blackout' : (light.Type === 13 ? 'Flashing Yellow' : 'Unknown')}</p>
+                    <p><strong>Start Date:</strong> ${new Date(light.StartDate).toLocaleString()}</p>
                 `;
                 faultyLightsContainer.appendChild(faultyLightDiv);
             });
@@ -110,6 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    /**
+     * Calls all data-fetching functions to populate the page.
+     */
     const updateAllData = () => {
         displayTrafficIncidents();
         displayTrafficImages();
