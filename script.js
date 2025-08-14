@@ -50,25 +50,40 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * Fetches and displays live traffic images.
+     * Fetches and displays live traffic images from checkpoints.
      */
     const displayTrafficImages = async () => {
-        imagesContainer.innerHTML = '<p>Loading live traffic images...</p>';
+        imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
+        
+        // Define the camera IDs for Woodlands and Tuas checkpoints
+        const checkpointCameraIDs = [
+            "2701", "2702", "4703", "4701", "4713", "4702", "4712", "4714", "4715", "4716", "4717", "4718", "4719"
+        ];
+
         const data = await fetchLTAData('/Traffic-Imagesv2');
         if (data && data.value && data.value.length > 0) {
-            imagesContainer.innerHTML = '';
-            const shuffled = data.value.sort(() => 0.5 - Math.random());
-            const selected = shuffled.slice(0, 20);
+            // Filter the cameras to only include the ones from our list
+            const checkpointCameras = data.value.filter(camera => checkpointCameraIDs.includes(camera.CameraID));
 
-            selected.forEach(image => {
-                const imageDiv = document.createElement('div');
-                imageDiv.classList.add('image-item');
-                imageDiv.innerHTML = `
-                    <img src="${image.ImageLink}" alt="Traffic Camera ${image.CameraID}" loading="lazy">
-                    <p><strong>Camera ID:</strong> ${image.CameraID}</p>
-                `;
-                imagesContainer.appendChild(imageDiv);
-            });
+            if (checkpointCameras.length > 0) {
+                imagesContainer.innerHTML = '';
+                checkpointCameras.forEach(image => {
+                    const imageDiv = document.createElement('div');
+                    imageDiv.classList.add('image-item');
+                    
+                    // Extract the time from the CreateDate string
+                    const updateTime = new Date(image.CreateDate).toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                    imageDiv.innerHTML = `
+                        <img src="${image.ImageLink}" alt="Traffic Camera ${image.CameraID}" loading="lazy">
+                        <p><strong>Camera ID:</strong> ${image.CameraID}</p>
+                        <p><strong>Updated:</strong> ${updateTime}</p>
+                    `;
+                    imagesContainer.appendChild(imageDiv);
+                });
+            } else {
+                imagesContainer.innerHTML = '<p>Could not find checkpoint camera data. 🚧</p>';
+            }
         } else {
             imagesContainer.innerHTML = '<p>No live traffic images available. 🚧</p>';
         }
