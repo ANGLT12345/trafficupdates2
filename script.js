@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const incidentsContainer = document.getElementById('incidents-container');
     const imagesContainer = document.getElementById('images-container');
-    const speedBandsContainer = document.getElementById('speed-bands-container');
     const faultyLightsContainer = document.getElementById('faulty-lights-container');
     const lastUpdatedSpan = document.getElementById('last-updated');
 
@@ -83,29 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     /**
-     * Fetches and displays traffic speed bands.
-     */
-    const displayTrafficSpeedBands = async () => {
-        speedBandsContainer.innerHTML = '<p>Loading traffic speed bands...</p>';
-        const data = await fetchLTAData('/v4/TrafficSpeedBands');
-        if (data && data.value && data.value.length > 0) {
-            speedBandsContainer.innerHTML = '';
-            data.value.forEach(band => {
-                const speedBandDiv = document.createElement('div');
-                speedBandDiv.classList.add('speed-band-item');
-                speedBandDiv.innerHTML = `
-                    <p><strong>Road:</strong> ${band.RoadName}</p>
-                    <p><strong>Category:</strong> ${band.RoadCategory}</p>
-                    <p><strong>Speed:</strong> ${band.MinimumSpeed}-${band.MaximumSpeed} km/h (Band: ${band.SpeedBand})</p>
-                `;
-                speedBandsContainer.appendChild(speedBandDiv);
-            });
-        } else {
-            speedBandsContainer.innerHTML = '<p>No traffic speed band data available. 🏎️</p>';
-        }
-    };
-
-    /**
      * Fetches and displays faulty traffic lights.
      */
     const displayFaultyTrafficLights = async () => {
@@ -116,11 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
             data.value.forEach(light => {
                 const faultyLightDiv = document.createElement('div');
                 faultyLightDiv.classList.add('faulty-light-item');
+                // Updated to show the descriptive message from the API
                 faultyLightDiv.innerHTML = `
-                    <p><strong>Alarm ID:</strong> ${light.AlarmID}</p>
-                    <p><strong>Node ID:</strong> ${light.NodeID}</p>
-                    <p><strong>Type:</strong> ${light.Type === 4 ? 'Blackout' : (light.Type === 13 ? 'Flashing Yellow' : 'Unknown')}</p>
-                    <p><strong>Start Date:</strong> ${new Date(light.StartDate).toLocaleString()}</p>
+                    <p><strong>Details:</strong> ${light.Message}</p>
+                    <p><strong>Reported on:</strong> ${new Date(light.StartDate).toLocaleString()}</p>
                 `;
                 faultyLightsContainer.appendChild(faultyLightDiv);
             });
@@ -135,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateAllData = () => {
         displayTrafficIncidents();
         displayTrafficImages();
-        displayTrafficSpeedBands();
+        // The call to displayTrafficSpeedBands() has been removed.
         displayFaultyTrafficLights();
         lastUpdatedSpan.textContent = new Date().toLocaleString();
     };
