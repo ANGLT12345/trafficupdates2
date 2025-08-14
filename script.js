@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(`${BASE_URL}${endpoint}`, {
                 headers: {
-                    'AccountKey': API_KEY,
+                    'AccountKey': 'VROVFNeMSI+qIQ4o/OLuNw==',
                     'accept': 'application/json'
                 }
             });
