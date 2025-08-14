@@ -55,10 +55,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const displayTrafficImages = async () => {
         imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
         
-        // Define the camera IDs for Woodlands and Tuas checkpoints
-        const checkpointCameraIDs = [
-            "2701", "2702", "4703", "4701", "4713", "4702", "4712", "4714", "4715", "4716", "4717", "4718", "4719"
-        ];
+        // Mapping for Camera IDs to their locations
+        const cameraLocations = {
+            "2701": "Woodlands Causeway (to Johor)",
+            "2702": "Woodlands Checkpoint (to BKE)",
+            "4701": "Tuas Checkpoint (to Second Link)",
+            "4702": "Tuas Checkpoint",
+            "4703": "Tuas Second Link",
+            "4712": "After Tuas West Road",
+            "4713": "Tuas Checkpoint (to AYE)",
+            "4714": "Tuas Second Link",
+            "4715": "Tuas Second Link",
+            "4716": "Tuas Second Link",
+            "4717": "Tuas Second Link",
+            "4718": "Tuas Second Link",
+            "4719": "Tuas Second Link"
+        };
+        const checkpointCameraIDs = Object.keys(cameraLocations);
 
         const data = await fetchLTAData('/Traffic-Imagesv2');
         if (data && data.value && data.value.length > 0) {
@@ -71,13 +84,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     const imageDiv = document.createElement('div');
                     imageDiv.classList.add('image-item');
                     
-                    // Extract the time from the CreateDate string
-                    const updateTime = new Date(image.CreateDate).toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    // --- FIX FOR INVALID DATE ---
+                    // The API date format is DD/MM/YYYY HH:mm:ss, which needs custom parsing.
+                    const dateTimeParts = image.CreateDate.split(' ');
+                    const dateParts = dateTimeParts[0].split('/'); // [DD, MM, YYYY]
+                    const timeParts = dateTimeParts[1].split(':'); // [HH, mm, ss]
+                    // Format for new Date(): new Date(year, month-1, day, hour, minute, second)
+                    const parsedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+                    const updateTime = parsedDate.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                    // Get the location name from our mapping object, with a fallback
+                    const locationName = cameraLocations[image.CameraID] || `Camera ${image.CameraID}`;
 
                     imageDiv.innerHTML = `
-                        <img src="${image.ImageLink}" alt="Traffic Camera ${image.CameraID}" loading="lazy">
-                        <p><strong>Camera ID:</strong> ${image.CameraID}</p>
-                        <p><strong>Updated:</strong> ${updateTime}</p>
+                        <img src="${image.ImageLink}" alt="Traffic at ${locationName}" loading="lazy">
+                        <p><strong>${locationName}</strong></p>
+                        <p>Updated: ${updateTime}</p>
                     `;
                     imagesContainer.appendChild(imageDiv);
                 });
@@ -121,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lastUpdatedSpan.textContent = new Date().toLocaleString();
     };
 
-    // --- NEW CODE FOR ACCORDION ---
+    // --- ACCORDION LOGIC ---
     // Get all the <details> elements
     const detailsElements = document.querySelectorAll('details.data-section');
 
@@ -141,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    // --- END OF NEW CODE ---
+    // --- END OF ACCORDION LOGIC ---
 
     // Initial load
     updateAllData();
