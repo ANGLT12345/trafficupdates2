@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const incidentsContainer = document.getElementById('incidents-container');
     const imagesContainer = document.getElementById('images-container');
     const weatherContainer = document.getElementById('weather-forecast-container');
+    const trainAlertsContainer = document.getElementById('train-alerts-container');
     const lastUpdatedSpan = document.getElementById('last-updated');
 
     const fetchLTAData = async (endpoint) => {
@@ -118,6 +119,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 groupContainer.appendChild(details);
             }
             incidentsContainer.appendChild(groupContainer);
+        }
+    };
+
+    const displayTrainServiceAlerts = async () => {
+        trainAlertsContainer.innerHTML = '<p>Loading train service alerts...</p>';
+        const data = await fetchLTAData('/TrainServiceAlerts');
+
+        if (data && data.value) {
+            const alert = data.value;
+            const status = alert.Status;
+            const line = alert.Line;
+            const message = alert.Message[0].Content;
+            
+            trainAlertsContainer.innerHTML = ''; // Clear loading text
+
+            const alertDiv = document.createElement('div');
+            alertDiv.classList.add('train-alert-item');
+            
+            let lineCode = line;
+            if (line.includes('LRT')) lineCode = 'LRT';
+
+            if (status === '1') { // Normal service
+                alertDiv.classList.add('normal');
+                alertDiv.innerHTML = `
+                    <div class="train-line-icon line-${lineCode}">${line}</div>
+                    <div class="train-alert-details">
+                        <p><strong>Normal Service</strong></p>
+                    </div>
+                `;
+            } else { // Disruption
+                alertDiv.classList.add('disrupted');
+                alertDiv.innerHTML = `
+                    <div class="train-line-icon line-${lineCode}">${line}</div>
+                    <div class="train-alert-details">
+                        <p><strong>Service Disruption</strong></p>
+                        <p>${message}</p>
+                    </div>
+                `;
+            }
+            trainAlertsContainer.appendChild(alertDiv);
+
+        } else {
+            trainAlertsContainer.innerHTML = '<p>Could not retrieve train service alerts.</p>';
         }
     };
 
@@ -259,6 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateAllData = () => {
         displayTrafficIncidents();
+        displayTrainServiceAlerts();
         displayTrafficImages();
         displayWeatherForecast();
         lastUpdatedSpan.textContent = new Date().toLocaleString();
