@@ -74,9 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         const disruptions = {};
+        let hasDisruption = false;
         
         // When a disruption occurs, the API returns an object with Status: 2
         if (data && data.value && typeof data.value === 'object' && !Array.isArray(data.value) && data.value.Status === 2) {
+            hasDisruption = true;
             const alert = data.value;
             const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Train service disruption reported.';
             
@@ -91,9 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (alert.AffectedSegments && Array.isArray(alert.AffectedSegments)) {
                 alert.AffectedSegments.forEach(segment => {
                     let lineCode = segment.Line;
-                    // Standardize LRT codes based on the provided JSON
-                    if (lineCode === 'PWL' || lineCode === 'PEL') lineCode = 'PGL';
-                    if (lineCode === 'SWL' || lineCode === 'SEL') lineCode = 'SPL';
+                    // Standardize LRT codes
+                    if (lineCode.includes('SW') || lineCode.includes('SE')) lineCode = 'SPL';
+                    if (lineCode.includes('PW') || lineCode.includes('PE')) lineCode = 'PGL';
                     disruptions[lineCode] = '2'; // Status '2' for disruption
                 });
             }
