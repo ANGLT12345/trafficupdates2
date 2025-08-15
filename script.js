@@ -172,16 +172,18 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         const disruptions = {};
-        // The API returns an object with a 'Status' key for disruptions.
-        // If there are no disruptions, the 'value' is an empty array.
-        if (data && data.value && data.value.Status && data.value.Status !== '1') {
-            const alert = data.value;
-            const affectedLines = alert.Line.split(',');
-            const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Details not available.';
-            
-            affectedLines.forEach(lineCode => {
-                const trimmedCode = lineCode.trim();
-                disruptions[trimmedCode] = message;
+        // The API returns an array of alerts for disruptions.
+        if (data && data.value && Array.isArray(data.value) && data.value.length > 0) {
+            data.value.forEach(alert => {
+                if (alert.Status !== '1') { // Check if there is a disruption
+                    const affectedLines = alert.Line.split(',');
+                    const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Details not available.';
+                    
+                    affectedLines.forEach(lineCode => {
+                        const trimmedCode = lineCode.trim();
+                        disruptions[trimmedCode] = message;
+                    });
+                }
             });
         }
 
