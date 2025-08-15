@@ -172,8 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         const disruptions = {};
-        // The API returns an array for disruptions. If it's an object, there are no disruptions.
-        if (data && data.value && Array.isArray(data.value)) {
+        // The API returns an array of alerts for disruptions.
+        if (data && data.value && Array.isArray(data.value) && data.value.length > 0) {
             data.value.forEach(alert => {
                 if (alert.Status !== '1') { // Check if there is a disruption
                     const affectedLines = alert.Line.split(',');

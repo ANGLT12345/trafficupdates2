@@ -11,9 +11,9 @@
         <h1>🚦 Singapore Traffic Updates 🚧</h1>
     </header>
 
-    <!-- New Advisory Carousel Container -->
+    <!-- Advisory Carousel Section -->
     <div id="advisory-carousel-container">
-        <p id="advisory-message">Loading traffic advisories...</p>
+        <p id="advisory-message">Loading advisories...</p>
     </div>
 
     <main>
@@ -24,16 +24,6 @@
             </summary>
             <div id="incidents-container" class="data-container">
                 <p>Loading traffic incidents...</p>
-            </div>
-        </details>
-
-        <!-- Section for Train Service Alerts -->
-        <details class="data-section">
-            <summary>
-                <h2>Train Service Alerts</h2>
-            </summary>
-            <div id="train-alerts-container" class="data-container">
-                <p>Loading train service alerts...</p>
             </div>
         </details>
         
@@ -60,6 +50,15 @@
     <footer>
         <p>Data provided by LTA DataMall. Last updated: <span id="last-updated"></span></p>
     </footer>
+
+    <!-- New Train Alert Modal -->
+    <div id="train-alert-modal-overlay">
+        <div id="train-alert-modal">
+            <button id="train-alert-close-btn">&times;</button>
+            <h3>Train Service Disruption</h3>
+            <p id="train-alert-message"></p>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
