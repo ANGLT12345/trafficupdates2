@@ -36,6 +36,12 @@ h1 {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    transition: background-color 0.5s ease;
+}
+
+/* New style for when a train disruption is active */
+#advisory-carousel-container.disruption-active {
+    background-color: #d42e12; /* Red for disruption */
 }
 
 #advisory-message {
@@ -191,63 +197,6 @@ main {
 .more-details[open] > .more-summary {
     margin-bottom: 10px;
 }
-
-/* --- NEW STYLES FOR TRAIN ALERTS --- */
-.train-alert-item {
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.train-alert-item.normal {
-    background-color: #2a2a2a;
-    border-left: 5px solid #28a745; /* Green for normal */
-}
-
-.train-alert-item.disrupted {
-    background-color: #442222; /* Dark Red */
-    border-left: 5px solid #d42e12; /* Red */
-}
-
-.train-line-icon {
-    font-weight: bold;
-    color: white;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 0.9em;
-}
-
-.train-alert-details p {
-    margin: 0;
-    text-align: left;
-    font-style: normal;
-}
-
-.train-alert-details p:first-child {
-    margin-bottom: 5px;
-}
-
-/* Train Line Colors */
-.line-EWL { background-color: #009645; }
-.line-NSL { background-color: #d42e12; }
-.line-CCL { background-color: #f8d522; color: #333; } /* Dark text for yellow */
-.line-NEL { background-color: #990099; }
-.line-DTL { background-color: #005ec4; }
-.line-TEL { background-color: #9d5b25; }
-.line-LRT { background-color: #8A8D8F; }
-.line-BPL { background-color: #8A8D8F; }
-.line-SPL { background-color: #8A8D8F; }
-.line-PGL { background-color: #8A8D8F; }
-.line-CG { background-color: #009645; }
-
 
 /* --- IMAGE GRID STYLES --- */
 
