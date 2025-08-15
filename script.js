@@ -56,16 +56,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkTrainDisruption = async () => {
         const data = await fetchLTAData('/TrainServiceAlerts');
         
-        // According to the documentation, disruptions are in an array inside the 'value' key.
-        if (data && data.value && Array.isArray(data.value) && data.value.length > 0) {
-            const disruption = data.value.find(alert => alert.Status === '2');
-            if (disruption) {
-                if (advisoryInterval) clearInterval(advisoryInterval); // Stop the VMS carousel
-                const message = disruption.Message && disruption.Message[0] ? disruption.Message[0].Content : 'Details not available.';
-                advisoryCarouselContainer.classList.add('disruption-active');
-                advisoryMessage.textContent = message;
-                return true; // Disruption found
-            }
+        // When a disruption occurs, the API returns an object with Status: 2
+        if (data && data.value && typeof data.value === 'object' && !Array.isArray(data.value) && data.value.Status === 2) {
+            const alert = data.value;
+            if (advisoryInterval) clearInterval(advisoryInterval); // Stop the VMS carousel
+            
+            const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Train service disruption reported.';
+            
+            advisoryCarouselContainer.classList.add('disruption-active');
+            advisoryMessage.textContent = message;
+            return true; // Disruption found
         }
         
         // No disruption found, run the normal advisory
