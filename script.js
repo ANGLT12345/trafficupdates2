@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         incidentsContainer.innerHTML = '<p>Loading all incidents...</p>';
 
         const incidentIcons = {
-            'Accident': 'https://img.icons8.com/?size=100&id=BrdfEjNVVRqI&format=png&color=000000',
+            'Accident': 'https://img.icons8.com/office/40/car-crash.png',
             'Roadwork': 'https://img.icons8.com/office/40/road-worker.png',
             'Vehicle breakdown': 'https://img.icons8.com/office/40/tow-truck.png',
             'Weather': 'https://img.icons8.com/office/40/partly-cloudy-day.png',
@@ -172,17 +172,19 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         const disruptions = {};
-        if (data && data.value && data.value.length > 0) {
-            data.value.forEach(alert => {
-                const affectedLines = alert.Line.split(',');
-                affectedLines.forEach(lineCode => {
-                    const trimmedCode = lineCode.trim();
-                    disruptions[trimmedCode] = alert.Message[0] ? alert.Message[0].Content : 'Details not available.';
-                });
+        // The API returns an object, not an array. Check if there's a disruption (Status !== '1').
+        if (data && data.value && data.value.Status !== '1') {
+            const alert = data.value;
+            const affectedLines = alert.Line.split(',');
+            const message = alert.Message[0] ? alert.Message[0].Content : 'Details not available.';
+            
+            affectedLines.forEach(lineCode => {
+                const trimmedCode = lineCode.trim();
+                disruptions[trimmedCode] = message;
             });
         }
 
-        trainAlertsContainer.innerHTML = '';
+        trainAlertsContainer.innerHTML = ''; // Clear loading text
 
         allTrainLines.forEach(line => {
             const alertDiv = document.createElement('div');
@@ -191,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const lineCode = line.code;
             const disruptionMessage = disruptions[lineCode];
 
-            if (disruptionMessage) {
+            if (disruptionMessage) { // If there is a disruption for this line
                 alertDiv.classList.add('disrupted');
                 alertDiv.innerHTML = `
                     <div class="train-line-icon line-${lineCode}">${lineCode}</div>
@@ -200,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>${disruptionMessage}</p>
                     </div>
                 `;
-            } else {
+            } else { // Normal service for this line
                 alertDiv.classList.add('normal');
                 alertDiv.innerHTML = `
                     <div class="train-line-icon line-${lineCode}">${lineCode}</div>
