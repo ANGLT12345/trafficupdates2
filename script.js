@@ -172,11 +172,11 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         const disruptions = {};
-        // The API returns an object, not an array. Check if there's a disruption (Status !== '1').
-        if (data && data.value && data.value.Status !== '1') {
+        // The API returns an object for a disruption, and an array (usually empty) for normal service.
+        if (data && data.value && !Array.isArray(data.value) && data.value.Status !== '1') {
             const alert = data.value;
             const affectedLines = alert.Line.split(',');
-            const message = alert.Message[0] ? alert.Message[0].Content : 'Details not available.';
+            const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Details not available.';
             
             affectedLines.forEach(lineCode => {
                 const trimmedCode = lineCode.trim();
