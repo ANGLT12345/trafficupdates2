@@ -172,9 +172,20 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         const disruptions = {};
-        // The API returns an array of alerts for disruptions.
-        if (data && data.value && Array.isArray(data.value) && data.value.length > 0) {
-            data.value.forEach(alert => {
+        let alerts = [];
+
+        // Defensively handle API response which might be an object or an array
+        if (data && data.value) {
+            if (Array.isArray(data.value)) {
+                alerts = data.value;
+            } else if (typeof data.value === 'object' && data.value !== null) {
+                // If it's a single object, put it into an array to process it uniformly
+                alerts = [data.value];
+            }
+        }
+
+        if (alerts.length > 0) {
+            alerts.forEach(alert => {
                 if (alert.Status !== '1') { // Check if there is a disruption
                     const affectedLines = alert.Line.split(',');
                     const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Details not available.';

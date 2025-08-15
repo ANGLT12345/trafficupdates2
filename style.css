@@ -208,8 +208,8 @@ main {
 }
 
 .train-alert-item.disrupted {
-    background-color: #3b312a;
-    border-left: 5px solid #ff9800; /* Orange for disruption */
+    background-color: #442222; /* Dark Red */
+    border-left: 5px solid #d42e12; /* Red */
 }
 
 .train-line-icon {
