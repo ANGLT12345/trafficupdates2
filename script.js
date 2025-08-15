@@ -58,28 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const checkTrainDisruption = async () => {
-        const data = await fetchLTAData('/TrainServiceAlerts');
-        
-        if (data && data.value && typeof data.value === 'object' && !Array.isArray(data.value) && data.value.Status === 2) {
-            const alert = data.value;
-            if (advisoryInterval) clearInterval(advisoryInterval);
-            
-            const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Train service disruption reported.';
-            
-            advisoryCarouselContainer.classList.add('disruption-active');
-            advisoryMessage.textContent = message;
-            
-            trainAlertMessage.textContent = message;
-            trainAlertModalOverlay.style.display = 'flex';
-        } else {
-            advisoryCarouselContainer.classList.remove('disruption-active');
-            displayAdvisoryCarousel();
-        }
-    };
-
-    const displayTrainServiceUpdates = async () => {
-        trainUpdatesContainer.innerHTML = '<p>Loading train service updates...</p>';
+    const handleTrainAlerts = async () => {
         const data = await fetchLTAData('/TrainServiceAlerts');
 
         const allTrainLines = [
@@ -95,18 +74,38 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         const disruptions = {};
-        if (data && data.value && Array.isArray(data.value) && data.value.length > 0) {
-            data.value.forEach(alert => {
-                const affectedLines = alert.Line.split(',');
-                const status = alert.Status; // 1: Normal, 2: Disruption, 3: Delay
-                
-                affectedLines.forEach(lineCode => {
-                    const trimmedCode = lineCode.trim();
-                    disruptions[trimmedCode] = status;
+        let hasDisruption = false;
+        
+        // When a disruption occurs, the API returns an object with Status: 2
+        if (data && data.value && typeof data.value === 'object' && !Array.isArray(data.value) && data.value.Status === 2) {
+            hasDisruption = true;
+            const alert = data.value;
+            const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Train service disruption reported.';
+            
+            // Handle the top banner and pop-up
+            if (advisoryInterval) clearInterval(advisoryInterval);
+            advisoryCarouselContainer.classList.add('disruption-active');
+            advisoryMessage.textContent = message;
+            trainAlertMessage.textContent = message;
+            trainAlertModalOverlay.style.display = 'flex';
+
+            // Populate disruptions map from AffectedSegments
+            if (alert.AffectedSegments && Array.isArray(alert.AffectedSegments)) {
+                alert.AffectedSegments.forEach(segment => {
+                    let lineCode = segment.Line;
+                    // Standardize LRT codes
+                    if (lineCode.includes('SW') || lineCode.includes('SE')) lineCode = 'SPL';
+                    if (lineCode.includes('PW') || lineCode.includes('PE')) lineCode = 'PGL';
+                    disruptions[lineCode] = '2'; // Status '2' for disruption
                 });
-            });
+            }
+        } else {
+            // No disruption found, run the normal advisory
+            advisoryCarouselContainer.classList.remove('disruption-active');
+            displayAdvisoryCarousel();
         }
 
+        // --- Render the Train Service Updates section ---
         trainUpdatesContainer.innerHTML = '<div class="train-update-grid"></div>';
         const grid = trainUpdatesContainer.querySelector('.train-update-grid');
 
@@ -115,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDiv.classList.add('train-update-item');
 
             const lineCode = line.code;
-            const status = disruptions[lineCode] || '1'; // Default to '1' (Normal) if not in API response
+            const status = disruptions[lineCode] || '1'; // Default to '1' (Normal)
 
             let statusText = 'Operational';
             let statusClass = 'operational';
@@ -383,9 +382,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const updateAllData = () => {
-        checkTrainDisruption();
+        handleTrainAlerts();
         displayTrafficIncidents();
-        displayTrainServiceUpdates();
         displayTrafficImages();
         displayWeatherForecast();
         lastUpdatedSpan.textContent = new Date().toLocaleString();
