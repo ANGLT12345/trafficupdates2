@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
         incidentsContainer.innerHTML = '<p>Loading all incidents...</p>';
 
         const incidentIcons = {
-            'Accident': 'https://img.icons8.com/office/40/car-crash.png',
+            'Accident': 'https://img.icons8.com/?size=100&id=BrdfEjNVVRqI&format=png&color=000000',
             'Roadwork': 'https://img.icons8.com/office/40/road-worker.png',
             'Vehicle breakdown': 'https://img.icons8.com/office/40/tow-truck.png',
             'Weather': 'https://img.icons8.com/office/40/partly-cloudy-day.png',
