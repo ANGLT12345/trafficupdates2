@@ -172,10 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         const disruptions = {};
-        // The API returns an array of alerts for disruptions.
+        // According to the documentation, disruptions are in an array inside the 'value' key.
         if (data && data.value && Array.isArray(data.value) && data.value.length > 0) {
             data.value.forEach(alert => {
-                if (alert.Status !== '1') { // Check if there is a disruption
+                if (alert.Status === '2') { // Status '2' indicates a disruption.
                     const affectedLines = alert.Line.split(',');
                     const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Details not available.';
                     

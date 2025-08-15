@@ -192,53 +192,62 @@ main {
     margin-bottom: 10px;
 }
 
-/* --- NEW STYLES FOR TRAIN ALERT MODAL --- */
-#train-alert-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    z-index: 100;
-    display: none; /* Hidden by default */
-    justify-content: center;
+/* --- NEW STYLES FOR TRAIN ALERTS --- */
+.train-alert-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    display: flex;
     align-items: center;
+    gap: 15px;
 }
 
-#train-alert-modal {
-    background-color: #1e1e1e;
-    padding: 30px;
-    border-radius: 8px;
-    border: 1px solid #444;
-    width: 90%;
-    max-width: 500px;
-    position: relative;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    text-align: center;
+.train-alert-item.normal {
+    background-color: #2a2a2a;
+    border-left: 5px solid #28a745; /* Green for normal */
 }
 
-#train-alert-modal h3 {
-    margin-top: 0;
-    color: #d42e12; /* Red for disruption */
-    font-size: 1.5em;
+.train-alert-item.disrupted {
+    background-color: #442222; /* Dark Red */
+    border-left: 5px solid #d42e12; /* Red */
 }
 
-#train-alert-modal p {
-    font-size: 1.1em;
-    color: #e0e0e0;
+.train-line-icon {
+    font-weight: bold;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.9em;
 }
 
-#train-alert-close-btn {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    background: none;
-    border: none;
-    color: #aaa;
-    font-size: 2em;
-    cursor: pointer;
+.train-alert-details p {
+    margin: 0;
+    text-align: left;
+    font-style: normal;
 }
+
+.train-alert-details p:first-child {
+    margin-bottom: 5px;
+}
+
+/* Train Line Colors */
+.line-EWL { background-color: #009645; }
+.line-NSL { background-color: #d42e12; }
+.line-CCL { background-color: #f8d522; color: #333; } /* Dark text for yellow */
+.line-NEL { background-color: #990099; }
+.line-DTL { background-color: #005ec4; }
+.line-TEL { background-color: #9d5b25; }
+.line-LRT { background-color: #8A8D8F; }
+.line-BPL { background-color: #8A8D8F; }
+.line-SPL { background-color: #8A8D8F; }
+.line-PGL { background-color: #8A8D8F; }
+.line-CG { background-color: #009645; }
+
 
 /* --- IMAGE GRID STYLES --- */
 
