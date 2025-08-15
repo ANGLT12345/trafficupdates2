@@ -2,9 +2,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const incidentsContainer = document.getElementById('incidents-container');
     const imagesContainer = document.getElementById('images-container');
     const weatherContainer = document.getElementById('weather-forecast-container');
+    const trainUpdatesContainer = document.getElementById('train-updates-container');
     const advisoryCarouselContainer = document.getElementById('advisory-carousel-container');
     const advisoryMessage = document.getElementById('advisory-message');
     const lastUpdatedSpan = document.getElementById('last-updated');
+    
+    const trainAlertModalOverlay = document.getElementById('train-alert-modal-overlay');
+    const trainAlertMessage = document.getElementById('train-alert-message');
+    const trainAlertCloseBtn = document.getElementById('train-alert-close-btn');
 
     let advisoryInterval;
 
@@ -56,23 +61,88 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkTrainDisruption = async () => {
         const data = await fetchLTAData('/TrainServiceAlerts');
         
-        // When a disruption occurs, the API returns an object with Status: 2
         if (data && data.value && typeof data.value === 'object' && !Array.isArray(data.value) && data.value.Status === 2) {
             const alert = data.value;
-            if (advisoryInterval) clearInterval(advisoryInterval); // Stop the VMS carousel
+            if (advisoryInterval) clearInterval(advisoryInterval);
             
             const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Train service disruption reported.';
             
             advisoryCarouselContainer.classList.add('disruption-active');
             advisoryMessage.textContent = message;
-            return true; // Disruption found
+            
+            trainAlertMessage.textContent = message;
+            trainAlertModalOverlay.style.display = 'flex';
+        } else {
+            advisoryCarouselContainer.classList.remove('disruption-active');
+            displayAdvisoryCarousel();
         }
-        
-        // No disruption found, run the normal advisory
-        advisoryCarouselContainer.classList.remove('disruption-active');
-        displayAdvisoryCarousel();
-        return false;
     };
+
+    const displayTrainServiceUpdates = async () => {
+        trainUpdatesContainer.innerHTML = '<p>Loading train service updates...</p>';
+        const data = await fetchLTAData('/TrainServiceAlerts');
+
+        const allTrainLines = [
+            { name: 'North-South Line', code: 'NSL' },
+            { name: 'East-West Line', code: 'EWL' },
+            { name: 'Circle Line', code: 'CCL' },
+            { name: 'North East Line', code: 'NEL' },
+            { name: 'Downtown Line', code: 'DTL' },
+            { name: 'Thomson-East Coast Line', code: 'TEL' },
+            { name: 'Bukit Panjang LRT', code: 'BPL' },
+            { name: 'Sengkang LRT', code: 'SPL' },
+            { name: 'Punggol LRT', code: 'PGL' }
+        ];
+
+        const disruptions = {};
+        if (data && data.value && Array.isArray(data.value) && data.value.length > 0) {
+            data.value.forEach(alert => {
+                const affectedLines = alert.Line.split(',');
+                const status = alert.Status; // 1: Normal, 2: Disruption, 3: Delay
+                
+                affectedLines.forEach(lineCode => {
+                    const trimmedCode = lineCode.trim();
+                    disruptions[trimmedCode] = status;
+                });
+            });
+        }
+
+        trainUpdatesContainer.innerHTML = '<div class="train-update-grid"></div>';
+        const grid = trainUpdatesContainer.querySelector('.train-update-grid');
+
+        allTrainLines.forEach(line => {
+            const updateDiv = document.createElement('div');
+            updateDiv.classList.add('train-update-item');
+
+            const lineCode = line.code;
+            const status = disruptions[lineCode] || '1'; // Default to '1' (Normal) if not in API response
+
+            let statusText = 'Operational';
+            let statusClass = 'operational';
+
+            if (status === '2') {
+                statusText = 'Disruption';
+                statusClass = 'down';
+            } else if (status === '3') {
+                statusText = 'Delay';
+                statusClass = 'delay';
+            }
+            
+            updateDiv.classList.add(statusClass);
+            updateDiv.innerHTML = `
+                <div class="train-line-icon line-${lineCode}">${lineCode}</div>
+                <div class="train-update-details">
+                    <p><strong>${line.name}</strong></p>
+                    <p>${statusText}</p>
+                </div>
+            `;
+            grid.appendChild(updateDiv);
+        });
+    };
+
+    trainAlertCloseBtn.addEventListener('click', () => {
+        trainAlertModalOverlay.style.display = 'none';
+    });
 
     const displayTrafficIncidents = async () => {
         incidentsContainer.innerHTML = '<p>Loading all incidents...</p>';
@@ -315,6 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateAllData = () => {
         checkTrainDisruption();
         displayTrafficIncidents();
+        displayTrainServiceUpdates();
         displayTrafficImages();
         displayWeatherForecast();
         lastUpdatedSpan.textContent = new Date().toLocaleString();
