@@ -75,35 +75,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const disruptions = {};
         let hasDisruption = false;
-        
-        // When a disruption occurs, the API returns an object with Status: 2
-        if (data && data.value && typeof data.value === 'object' && !Array.isArray(data.value) && data.value.Status === 2) {
-            hasDisruption = true;
-            const alert = data.value;
-            const message = alert.Message && alert.Message[0] ? alert.Message[0].Content : 'Train service disruption reported.';
+        let disruptionMessage = 'Train service disruption reported.';
+
+        // =================== FIXED CODE START ===================
+        // The LTA API can return either an object (for a major disruption) or an array of line statuses.
+        // This new logic handles both cases.
+
+        if (data && data.value) {
+            const alerts = Array.isArray(data.value) ? data.value : [data.value];
             
-            // Handle the top banner and pop-up
+            alerts.forEach(alert => {
+                if (alert.Status === 2) { // Status '2' indicates a disruption
+                    hasDisruption = true;
+                    if (alert.Message && alert.Message[0]) {
+                        disruptionMessage = alert.Message[0].Content;
+                    }
+
+                    if (alert.AffectedSegments && Array.isArray(alert.AffectedSegments)) {
+                        alert.AffectedSegments.forEach(segment => {
+                            let lineCode = segment.Line;
+                            // Standardize LRT codes
+                            if (lineCode.includes('SW') || lineCode.includes('SE')) lineCode = 'SPL';
+                            if (lineCode.includes('PW') || lineCode.includes('PE')) lineCode = 'PGL';
+                            disruptions[lineCode] = '2';
+                        });
+                    }
+                }
+            });
+        }
+        
+        if (hasDisruption) {
             if (advisoryInterval) clearInterval(advisoryInterval);
             advisoryCarouselContainer.classList.add('disruption-active');
-            advisoryMessage.textContent = message;
-            trainAlertMessage.textContent = message;
+            advisoryMessage.textContent = disruptionMessage;
+            trainAlertMessage.textContent = disruptionMessage;
             trainAlertModalOverlay.style.display = 'flex';
-
-            // Populate disruptions map from AffectedSegments
-            if (alert.AffectedSegments && Array.isArray(alert.AffectedSegments)) {
-                alert.AffectedSegments.forEach(segment => {
-                    let lineCode = segment.Line;
-                    // Standardize LRT codes
-                    if (lineCode.includes('SW') || lineCode.includes('SE')) lineCode = 'SPL';
-                    if (lineCode.includes('PW') || lineCode.includes('PE')) lineCode = 'PGL';
-                    disruptions[lineCode] = '2'; // Status '2' for disruption
-                });
-            }
         } else {
-            // No disruption found, run the normal advisory
             advisoryCarouselContainer.classList.remove('disruption-active');
             displayAdvisoryCarousel();
         }
+        // =================== FIXED CODE END ===================
 
         // --- Render the Train Service Updates section ---
         trainUpdatesContainer.innerHTML = '<div class="train-update-grid"></div>';
