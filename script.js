@@ -255,6 +255,27 @@ document.addEventListener('DOMContentLoaded', () => {
             incidentsContainer.appendChild(groupContainer);
         }
     };
+    // Map LTA Traffic-Imagesv2 CameraID -> human‑readable landmark
+    const cameraLandmarks = {
+        "2701": "Woodlands Causeway (Towards Johor)",
+        "2702": "Woodlands Checkpoint",
+        "2703": "BKE / PIE – Chantek Flyover",
+        "2704": "BKE Woodlands Checkpoint – Woodlands Flyover",
+        "2705": "BKE / PIE – Dairy Farm Flyover",
+        "2706": "Mandai Road – Entrance towards Checkpoint",
+        "2707": "Exit 5 to KJE (towards PIE)",
+        "2708": "Exit 5 to KJE (towards Checkpoint)",
+        "4701": "AYE (City) – Alexandra Road Exit",
+        "4702": "AYE (Jurong) – Keppel Viaduct",
+        "4703": "Tuas Second Link",
+        "4710": "AYE (Tuas) – Pandan Garden",
+        "4712": "AYE (Tuas) – Tuas Ave 8 Exit",
+        "4713": "Tuas Checkpoint",
+        "4714": "AYE (Tuas) – Near West Coast Walk",
+        "4716": "AYE (Tuas) – Entrance from Benoi Road"
+        // 4715, 4717, 4718, 4719 are not listed in Annex G; they will fall back to just the ID.[file:1]
+    };
+
 
     const displayTrafficImages = async () => {
         imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
@@ -267,10 +288,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 checkpointCameras.forEach(image => {
                     const imageDiv = document.createElement('div');
                     imageDiv.classList.add('image-item');
-                    const updateTime = new Date(image.CreateDate).toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                    const updateTime = new Date(image.CreateDate).toLocaleTimeString(
+                        'en-SG',
+                        { hour: '2-digit', minute: '2-digit', hour12: true }
+                    );
+
+                    // Look up human‑readable landmark, fall back to just the ID if unknown
+                    const landmark = cameraLandmarks[image.CameraID];
+                    
+                    const cameraLabel = landmark || `Camera ${image.CameraID}`;
                     imageDiv.innerHTML = `
-                        <img src="${image.ImageLink}" alt="Traffic Camera ${image.CameraID}" loading="lazy">
-                        <p><strong>Camera ID:</strong> ${image.CameraID}</p>
+                        <img src="${image.ImageLink}" alt="Traffic Camera ${cameraLabel}" loading="lazy">
+                        <p><strong>Camera:</strong> ${cameraLabel}</p>
                         <p><strong>Updated:</strong> ${updateTime}</p>
                     `;
                     imagesContainer.appendChild(imageDiv);
