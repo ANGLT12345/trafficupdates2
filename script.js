@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const displayTrafficImages = async () => {
         imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
-        const checkpointCameraIDs = ["2701", "2702", "4703", "4701", "4713", "4702", "4712", "4714", "4715", "4716", "4717", "4718", "4719"];
+        const checkpointCameraIDs = ["2701", "2702", "4703", "4713"];
         const data = await fetchLTAData('/Traffic-Imagesv2');
         if (data && data.value) {
             const checkpointCameras = data.value.filter(camera => checkpointCameraIDs.includes(camera.CameraID));
