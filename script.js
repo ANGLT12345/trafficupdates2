@@ -300,8 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const cameraLabel = landmark || `Camera ${image.CameraID}`;
                     imageDiv.innerHTML = `
                         <img src="${image.ImageLink}" alt="Traffic Camera ${cameraLabel}" loading="lazy">
-                        <p><strong>Camera:</strong> ${cameraLabel}</p>
-                        <p><strong>Updated:</strong> ${updateTime}</p>
+                        <p> ${cameraLabel}</p>
+                        
                     `;
                     imagesContainer.appendChild(imageDiv);
                 });
