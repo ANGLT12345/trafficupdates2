@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: 'North-South Line', code: 'NSL' },
             { name: 'East-West Line', code: 'EWL' },
             { name: 'Circle Line', code: 'CCL' },
-            { name: 'North East Line', code: 'NEL' },
+            { name: 'North-East Line', code: 'NEL' },
             { name: 'Downtown Line', code: 'DTL' },
             { name: 'Thomson-East Coast Line', code: 'TEL' },
             { name: 'Bukit Panjang LRT', code: 'BPL' },
