@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'Roadwork': 'https://img.icons8.com/office/40/road-worker.png',
             'Vehicle breakdown': 'https://img.icons8.com/office/40/tow-truck.png',
             'Weather': 'https://img.icons8.com/office/40/partly-cloudy-day.png',
-            'Obstacle': 'https://img.icons8.com/office/40/traffic-cone.png',
+            'Obstacle': 'https://img.icons8.com/?size=100&id=bZgFYyK2uzeG&format=png&color=000000',
             'Road Block': 'https://img.icons8.com/office/40/road-barrier.png',
             'Heavy Traffic': 'https://img.icons8.com/office/40/traffic-jam.png',
             'Miscellaneous': 'https://img.icons8.com/office/40/info.png',
