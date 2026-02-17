@@ -1,18 +1,67 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // ---- DOM References ----
     const incidentsContainer = document.getElementById('incidents-container');
+    const incidentSummary = document.getElementById('incident-summary');
+    const incidentBadge = document.getElementById('incident-badge');
     const imagesContainer = document.getElementById('images-container');
     const weatherContainer = document.getElementById('weather-forecast-container');
     const trainUpdatesContainer = document.getElementById('train-updates-container');
     const advisoryCarouselContainer = document.getElementById('advisory-carousel-container');
     const advisoryMessage = document.getElementById('advisory-message');
     const lastUpdatedSpan = document.getElementById('last-updated');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const countdownTimer = document.getElementById('countdown-timer');
     
     const trainAlertModalOverlay = document.getElementById('train-alert-modal-overlay');
     const trainAlertMessage = document.getElementById('train-alert-message');
     const trainAlertCloseBtn = document.getElementById('train-alert-close-btn');
+    const trainAlertDismissBtn = document.getElementById('train-alert-dismiss-btn');
 
     let advisoryInterval;
+    let countdownInterval;
+    const REFRESH_INTERVAL = 300; // 5 minutes in seconds
 
+    // ---- Tab Navigation ----
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.dataset.tab;
+            tabButtons.forEach(b => b.classList.remove('active'));
+            tabPanels.forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(targetTab).classList.add('active');
+        });
+    });
+
+    // ---- Countdown Timer ----
+    const startCountdown = () => {
+        let remaining = REFRESH_INTERVAL;
+        if (countdownInterval) clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                remaining = REFRESH_INTERVAL;
+                updateAllData();
+            }
+            const mins = Math.floor(remaining / 60);
+            const secs = remaining % 60;
+            countdownTimer.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+        }, 1000);
+    };
+
+    // ---- Refresh Button ----
+    refreshBtn.addEventListener('click', () => {
+        refreshBtn.classList.add('spinning');
+        setTimeout(() => refreshBtn.classList.remove('spinning'), 800);
+        updateAllData();
+        // Reset countdown
+        if (countdownInterval) clearInterval(countdownInterval);
+        startCountdown();
+    });
+
+    // ---- Data Fetching ----
     const fetchLTAData = async (endpoint) => {
         const proxyUrl = `/api/proxy?endpoint=${endpoint}`;
         try {
@@ -28,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
+    // ---- Advisory Carousel ----
     const displayAdvisoryCarousel = async () => {
         if (advisoryInterval) clearInterval(advisoryInterval);
 
@@ -51,13 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     currentIndex = (currentIndex + 1) % messages.length;
                     advisoryMessage.textContent = messages[currentIndex];
                     advisoryMessage.classList.remove('fade-out');
-                }, 500);
+                }, 400);
             }, 5000);
         } else {
             advisoryMessage.textContent = 'Advisories currently unavailable.';
         }
     };
 
+    // ---- Train Service Alerts ----
     const handleTrainAlerts = async () => {
         const data = await fetchLTAData('/TrainServiceAlerts');
 
@@ -77,24 +128,18 @@ document.addEventListener('DOMContentLoaded', () => {
         let hasDisruption = false;
         let disruptionMessage = 'Train service disruption reported.';
 
-        // =================== FIXED CODE START ===================
-        // The LTA API can return either an object (for a major disruption) or an array of line statuses.
-        // This new logic handles both cases.
-
         if (data && data.value) {
             const alerts = Array.isArray(data.value) ? data.value : [data.value];
             
             alerts.forEach(alert => {
-                if (alert.Status === 2) { // Status '2' indicates a disruption
+                if (alert.Status === 2) {
                     hasDisruption = true;
                     if (alert.Message && alert.Message[0]) {
                         disruptionMessage = alert.Message[0].Content;
                     }
-
                     if (alert.AffectedSegments && Array.isArray(alert.AffectedSegments)) {
                         alert.AffectedSegments.forEach(segment => {
                             let lineCode = segment.Line;
-                            // Standardize LRT codes
                             if (lineCode.includes('SW') || lineCode.includes('SE')) lineCode = 'SPL';
                             if (lineCode.includes('PW') || lineCode.includes('PE')) lineCode = 'PGL';
                             disruptions[lineCode] = '2';
@@ -114,9 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
             advisoryCarouselContainer.classList.remove('disruption-active');
             displayAdvisoryCarousel();
         }
-        // =================== FIXED CODE END ===================
 
-        // --- Render the Train Service Updates section ---
+        // Render train service grid
         trainUpdatesContainer.innerHTML = '<div class="train-update-grid"></div>';
         const grid = trainUpdatesContainer.querySelector('.train-update-grid');
 
@@ -125,16 +169,16 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDiv.classList.add('train-update-item');
 
             const lineCode = line.code;
-            const status = disruptions[lineCode] || '1'; // Default to '1' (Normal)
+            const status = disruptions[lineCode] || '1';
 
-            let statusText = 'Operational';
+            let statusText = '● Normal Service';
             let statusClass = 'operational';
 
             if (status === '2') {
-                statusText = 'Disruption';
+                statusText = '⚠ Disruption';
                 statusClass = 'down';
             } else if (status === '3') {
-                statusText = 'Delay';
+                statusText = '◐ Delay';
                 statusClass = 'delay';
             }
             
@@ -142,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDiv.innerHTML = `
                 <div class="train-line-icon line-${lineCode}">${lineCode}</div>
                 <div class="train-update-details">
-                    <p><strong>${line.name}</strong></p>
+                    <p>${line.name}</p>
                     <p>${statusText}</p>
                 </div>
             `;
@@ -150,12 +194,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    trainAlertCloseBtn.addEventListener('click', () => {
-        trainAlertModalOverlay.style.display = 'none';
+    // Modal close handlers
+    const closeModal = () => { trainAlertModalOverlay.style.display = 'none'; };
+    trainAlertCloseBtn.addEventListener('click', closeModal);
+    trainAlertDismissBtn.addEventListener('click', closeModal);
+    trainAlertModalOverlay.addEventListener('click', (e) => {
+        if (e.target === trainAlertModalOverlay) closeModal();
     });
 
+    // ---- Traffic Incidents ----
     const displayTrafficIncidents = async () => {
-        incidentsContainer.innerHTML = '<p>Loading all incidents...</p>';
+        incidentsContainer.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading incidents…</p></div>';
 
         const incidentIcons = {
             'Accident': 'https://img.icons8.com/?size=100&id=BrdfEjNVVRqI&format=png&color=000000',
@@ -194,8 +243,21 @@ document.addEventListener('DOMContentLoaded', () => {
             allIncidents.push(...faultyLights);
         }
 
+        // Update badge
+        if (allIncidents.length > 0) {
+            incidentBadge.textContent = allIncidents.length;
+            incidentBadge.classList.remove('hidden');
+        } else {
+            incidentBadge.classList.add('hidden');
+        }
+
         if (allIncidents.length === 0) {
-            incidentsContainer.innerHTML = '<p>No traffic incidents reported. All clear! ✨</p>';
+            incidentsContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">✨</div>
+                    <p>No traffic incidents reported — all clear!</p>
+                </div>`;
+            incidentSummary.innerHTML = '';
             return;
         }
 
@@ -206,13 +268,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return acc;
         }, {});
 
-        incidentsContainer.innerHTML = '';
+        // Build summary chips
+        incidentSummary.innerHTML = '';
         const sortedGroupKeys = Object.keys(groupedIncidents).sort();
+        sortedGroupKeys.forEach(type => {
+            const chip = document.createElement('span');
+            chip.classList.add('summary-chip');
+            chip.innerHTML = `${type} <span class="chip-count">${groupedIncidents[type].length}</span>`;
+            chip.addEventListener('click', () => {
+                const target = document.getElementById(`group-${type.replace(/\s+/g, '-')}`);
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            incidentSummary.appendChild(chip);
+        });
+
+        // Build incident groups
+        incidentsContainer.innerHTML = '';
 
         for (const type of sortedGroupKeys) {
             const incidents = groupedIncidents[type];
             const groupContainer = document.createElement('div');
             groupContainer.classList.add('incident-group');
+            groupContainer.id = `group-${type.replace(/\s+/g, '-')}`;
 
             const groupHeading = document.createElement('h3');
             groupHeading.classList.add('incident-group-title');
@@ -223,13 +300,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const incidentDiv = document.createElement('div');
                 incidentDiv.classList.add('incident-item');
                 const iconUrl = incidentIcons[incident.Type] || defaultIcon;
-                
                 const cleanedMessage = incident.Message.replace(/^\(\d{2}\/\d{2}\)\d{2}:\d{2}\s*/, '');
 
                 incidentDiv.innerHTML = `
                     <img src="${iconUrl}" alt="${incident.Type}" class="incident-icon">
                     <div class="incident-details">
-                        <p><strong>Message:</strong> ${cleanedMessage}</p>
+                        <p>${cleanedMessage}</p>
                     </div>
                 `;
                 return incidentDiv;
@@ -255,7 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
             incidentsContainer.appendChild(groupContainer);
         }
     };
-    // Map LTA Traffic-Imagesv2 CameraID -> human‑readable landmark
+
+    // ---- Camera Landmarks ----
     const cameraLandmarks = {
         "2701": "Woodlands Causeway (Towards Johor)",
         "2702": "Woodlands Checkpoint",
@@ -273,12 +350,11 @@ document.addEventListener('DOMContentLoaded', () => {
         "4713": "Tuas Checkpoint",
         "4714": "AYE (Tuas) – Near West Coast Walk",
         "4716": "AYE (Tuas) – Entrance from Benoi Road"
-        // 4715, 4717, 4718, 4719 are not listed in Annex G; they will fall back to just the ID.[file:1]
     };
 
-
+    // ---- Traffic Images ----
     const displayTrafficImages = async () => {
-        imagesContainer.innerHTML = '<p>Loading checkpoint traffic images...</p>';
+        imagesContainer.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading cameras…</p></div>';
         const checkpointCameraIDs = ["2701", "2702", "4703", "4713"];
         const data = await fetchLTAData('/Traffic-Imagesv2');
         if (data && data.value) {
@@ -294,27 +370,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         { hour: '2-digit', minute: '2-digit', hour12: true }
                     );
 
-                    // Look up human‑readable landmark, fall back to just the ID if unknown
                     const landmark = cameraLandmarks[image.CameraID];
-                    
                     const cameraLabel = landmark || `Camera ${image.CameraID}`;
                     imageDiv.innerHTML = `
-                        <img src="${image.ImageLink}" alt="Traffic Camera ${cameraLabel}" loading="lazy">
-                        <p> ${cameraLabel}</p>
-                        
+                        <img src="${image.ImageLink}" alt="${cameraLabel}" loading="lazy">
+                        <div class="image-item-info">
+                            <p>${cameraLabel}</p>
+                            <span class="camera-time">${updateTime}</span>
+                        </div>
                     `;
                     imagesContainer.appendChild(imageDiv);
                 });
             } else {
-                imagesContainer.innerHTML = '<p>Could not find checkpoint camera data. 🚧</p>';
+                imagesContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">📷</div><p>Could not find checkpoint camera data.</p></div>';
             }
         } else {
-            imagesContainer.innerHTML = '<p>No live traffic images available. 🚧</p>';
+            imagesContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">📷</div><p>No live traffic images available.</p></div>';
         }
     };
 
+    // ---- Weather Forecast ----
     const displayWeatherForecast = async () => {
-        weatherContainer.innerHTML = '<p>Loading weather forecast...</p>';
+        weatherContainer.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading forecast…</p></div>';
         const WEATHER_API_URL = 'https://api.data.gov.sg/v1/environment/24-hour-weather-forecast';
 
         try {
@@ -329,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const periods = forecast.periods;
                 const general = forecast.general;
 
-                weatherContainer.innerHTML = ''; // Clear loading text
+                weatherContainer.innerHTML = '';
 
                 const periodsGrid = document.createElement('div');
                 periodsGrid.classList.add('weather-periods-grid');
@@ -364,11 +441,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     let periodName = "Forecast";
                     const startHour = new Date(period.time.start).getHours();
-                    if (startHour >= 6 && startHour < 12) periodName = "Morning";
-                    else if (startHour >= 12 && startHour < 18) periodName = "Afternoon";
-                    else periodName = "Night";
+                    if (startHour >= 6 && startHour < 12) periodName = "🌅 Morning";
+                    else if (startHour >= 12 && startHour < 18) periodName = "☀️ Afternoon";
+                    else periodName = "🌙 Night";
 
-                    periodDiv.innerHTML = `<h4 class="period-title">${periodName} (${startTime} - ${endTime})</h4>`;
+                    periodDiv.innerHTML = `<h4 class="period-title">${periodName} (${startTime} – ${endTime})</h4>`;
                     
                     const regionsList = document.createElement('div');
                     regionsList.classList.add('region-forecast-list');
@@ -399,48 +476,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="weather-stats">
                         <div class="weather-stats-item">
                             <img src="https://img.icons8.com/material-outlined/24/thermometer.png" alt="Temperature">
-                            <span>${general.temperature.low}°C - ${general.temperature.high}°C</span>
+                            <span>${general.temperature.low}°C – ${general.temperature.high}°C</span>
                         </div>
                         <div class="weather-stats-item">
                             <img src="https://img.icons8.com/ios-glyphs/30/hygrometer.png" alt="Humidity">
-                            <span>${general.relative_humidity.low}% - ${general.relative_humidity.high}%</span>
+                            <span>${general.relative_humidity.low}% – ${general.relative_humidity.high}%</span>
                         </div>
                         <div class="weather-stats-item">
                             <img src="https://img.icons8.com/material-outlined/24/wind.png" alt="Wind">
-                            <span>${general.wind.direction} ${general.wind.speed.low} - ${general.wind.speed.high} km/h</span>
+                            <span>${general.wind.direction} ${general.wind.speed.low} – ${general.wind.speed.high} km/h</span>
                         </div>
                     </div>
                 `;
                 weatherContainer.appendChild(statsContainer);
             } else {
-                weatherContainer.innerHTML = '<p>Weather forecast data is currently unavailable.</p>';
+                weatherContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">🌤️</div><p>Weather forecast data is currently unavailable.</p></div>';
             }
 
         } catch (error) {
             console.error('Error fetching weather forecast:', error);
-            weatherContainer.innerHTML = '<p>Could not load weather forecast.</p>';
+            weatherContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">🌤️</div><p>Could not load weather forecast.</p></div>';
         }
     };
 
+    // ---- Update All Data ----
     const updateAllData = () => {
         handleTrainAlerts();
         displayTrafficIncidents();
         displayTrafficImages();
         displayWeatherForecast();
-        lastUpdatedSpan.textContent = new Date().toLocaleString();
+        const now = new Date();
+        lastUpdatedSpan.textContent = `Updated ${now.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
     };
 
-    const detailsElements = document.querySelectorAll('details.data-section');
-    detailsElements.forEach(details => {
-        details.addEventListener('toggle', () => {
-            if (details.open) {
-                detailsElements.forEach(otherDetails => {
-                    if (otherDetails !== details) otherDetails.open = false;
-                });
-            }
-        });
-    });
-
+    // ---- Initialize ----
     updateAllData();
-    setInterval(updateAllData, 300000);
+    startCountdown();
 });

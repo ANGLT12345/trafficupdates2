@@ -3,70 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Singapore Traffic Updates</title>
+    <title>SG Traffic – Live Updates</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>🚦 Singapore Traffic Updates 🚧</h1>
-    </header>
-
-    <!-- Advisory Carousel Section -->
+    <!-- Advisory Ticker -->
     <div id="advisory-carousel-container">
+        <span id="advisory-icon">📢</span>
         <p id="advisory-message">Loading advisories...</p>
     </div>
 
+    <header>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>🚦 SG Traffic</h1>
+                <span class="header-subtitle">Live Road &amp; Rail Updates</span>
+            </div>
+            <div class="header-right">
+                <div id="refresh-area">
+                    <button id="refresh-btn" title="Refresh all data">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    </button>
+                    <span id="countdown-timer" title="Auto-refreshes every 5 min">5:00</span>
+                </div>
+                <span id="last-updated"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav id="tab-bar">
+        <button class="tab-btn active" data-tab="tab-incidents">
+            <span class="tab-icon">⚠️</span>
+            <span class="tab-label">Incidents</span>
+            <span id="incident-badge" class="tab-badge hidden">0</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-trains">
+            <span class="tab-icon">🚆</span>
+            <span class="tab-label">Trains</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-cameras">
+            <span class="tab-icon">📷</span>
+            <span class="tab-label">Cameras</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-weather">
+            <span class="tab-icon">🌤️</span>
+            <span class="tab-label">Weather</span>
+        </button>
+    </nav>
+
     <main>
-        <!-- The main section for all incidents -->
-        <details class="data-section" open>
-            <summary>
+        <!-- INCIDENTS TAB -->
+        <section id="tab-incidents" class="tab-panel active">
+            <div class="section-header">
                 <h2>Traffic Incidents</h2>
-            </summary>
+                <div id="incident-summary" class="summary-chips"></div>
+            </div>
             <div id="incidents-container" class="data-container">
-                <p>Loading traffic incidents...</p>
+                <div class="loading-spinner"><div class="spinner"></div><p>Loading incidents…</p></div>
             </div>
-        </details>
-        
-        <!-- New Section for Train Service Updates -->
-        <details class="data-section">
-            <summary>
-                <h2>Train Service Updates</h2>
-            </summary>
+        </section>
+
+        <!-- TRAINS TAB -->
+        <section id="tab-trains" class="tab-panel">
+            <div class="section-header">
+                <h2>Train Services</h2>
+                <p class="section-desc">Tap a line for details</p>
+            </div>
             <div id="train-updates-container" class="data-container">
-                <p>Loading train service updates...</p>
+                <div class="loading-spinner"><div class="spinner"></div><p>Loading train status…</p></div>
             </div>
-        </details>
+        </section>
 
-        <!-- The traffic images section -->
-        <details class="data-section">
-            <summary>
-                <h2>Live Traffic Images</h2>
-            </summary>
+        <!-- CAMERAS TAB -->
+        <section id="tab-cameras" class="tab-panel">
+            <div class="section-header">
+                <h2>Live Checkpoint Cameras</h2>
+                <p class="section-desc">Border crossing views</p>
+            </div>
             <div id="images-container" class="image-grid">
-                <p>Loading traffic images...</p>
+                <div class="loading-spinner"><div class="spinner"></div><p>Loading cameras…</p></div>
             </div>
-        </details>
+        </section>
 
-        <!-- Section for the Weather Forecast -->
-        <details class="data-section">
-            <summary>
-                <h2>24-Hour Weather Forecast</h2>
-            </summary>
-            <div id="weather-forecast-container" class="data-container">
-                <p>Loading weather forecast...</p>
+        <!-- WEATHER TAB -->
+        <section id="tab-weather" class="tab-panel">
+            <div class="section-header">
+                <h2>24-Hour Weather</h2>
             </div>
-        </details>
+            <div id="weather-forecast-container" class="data-container">
+                <div class="loading-spinner"><div class="spinner"></div><p>Loading forecast…</p></div>
+            </div>
+        </section>
     </main>
+
     <footer>
-        <p>Data provided by LTA DataMall. Last updated: <span id="last-updated"></span></p>
+        <p>Data by <strong>LTA DataMall</strong> &amp; <strong>data.gov.sg</strong></p>
     </footer>
 
     <!-- Train Alert Modal -->
     <div id="train-alert-modal-overlay">
         <div id="train-alert-modal">
             <button id="train-alert-close-btn">&times;</button>
+            <div class="modal-icon">🚨</div>
             <h3>Train Service Disruption</h3>
             <p id="train-alert-message"></p>
+            <button id="train-alert-dismiss-btn">Got it</button>
         </div>
     </div>
 
