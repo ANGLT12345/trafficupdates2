@@ -365,10 +365,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const imageDiv = document.createElement('div');
                     imageDiv.classList.add('image-item');
 
-                    const updateTime = new Date(image.CreateDate).toLocaleTimeString(
-                        'en-SG',
-                        { hour: '2-digit', minute: '2-digit', hour12: true }
-                    );
+                    let updateTime = '';
+                    if (image.CreateDate) {
+                        const dateObj = new Date(image.CreateDate);
+                        updateTime = isNaN(dateObj.getTime())
+                            ? '—'
+                            : dateObj.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    } else {
+                        updateTime = '—';
+                    }
 
                     const landmark = cameraLandmarks[image.CameraID];
                     const cameraLabel = landmark || `Camera ${image.CameraID}`;
