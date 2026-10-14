@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const incidentBadge = document.getElementById('incident-badge');
     const imagesContainer = document.getElementById('images-container');
     const weatherContainer = document.getElementById('weather-forecast-container');
+    const psiContainer = document.getElementById('psi-container');
+    const psiUpdated = document.getElementById('psi-updated');
     const trainUpdatesContainer = document.getElementById('train-updates-container');
     const advisoryCarouselContainer = document.getElementById('advisory-carousel-container');
     const advisoryMessage = document.getElementById('advisory-message');
@@ -504,12 +506,130 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ---- Air Quality (PSI / PM2.5) ----
+    // NEA bands: https://www.haze.gov.sg
+    const psiBand = (value) => {
+        if (value <= 50) return { label: 'Good', cls: 'aq-good' };
+        if (value <= 100) return { label: 'Moderate', cls: 'aq-moderate' };
+        if (value <= 200) return { label: 'Unhealthy', cls: 'aq-unhealthy' };
+        if (value <= 300) return { label: 'Very Unhealthy', cls: 'aq-very-unhealthy' };
+        return { label: 'Hazardous', cls: 'aq-hazardous' };
+    };
+
+    const pm25Band = (value) => {
+        if (value <= 55) return { label: 'Normal', cls: 'aq-good' };
+        if (value <= 150) return { label: 'Elevated', cls: 'aq-moderate' };
+        if (value <= 250) return { label: 'High', cls: 'aq-unhealthy' };
+        return { label: 'Very High', cls: 'aq-very-unhealthy' };
+    };
+
+    const fetchDataGovItem = async (url) => {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`data.gov.sg error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            return data.items && data.items.length > 0 ? data.items[0] : null;
+        } catch (error) {
+            console.error(`Error fetching ${url}:`, error);
+            return null;
+        }
+    };
+
+    const displayAirQuality = async () => {
+        psiContainer.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><p>Loading air quality…</p></div>';
+
+        const [psiItem, pm25Item] = await Promise.all([
+            fetchDataGovItem('https://api.data.gov.sg/v1/environment/psi'),
+            fetchDataGovItem('https://api.data.gov.sg/v1/environment/pm25')
+        ]);
+
+        const psi24h = psiItem && psiItem.readings && psiItem.readings.psi_twenty_four_hourly;
+        const pm251h = pm25Item && pm25Item.readings && pm25Item.readings.pm25_one_hourly;
+
+        if (!psi24h && !pm251h) {
+            psiContainer.innerHTML = '<div class="empty-state"><div class="empty-icon">🌫️</div><p>Air quality data is currently unavailable.</p></div>';
+            return;
+        }
+
+        const timestamp = (psiItem && psiItem.timestamp) || (pm25Item && pm25Item.timestamp);
+        if (timestamp) {
+            const time = new Date(timestamp).toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit', hour12: true });
+            psiUpdated.textContent = `24-hr PSI & 1-hr PM2.5 · as of ${time}`;
+        }
+
+        const regions = ['north', 'south', 'east', 'west', 'central'];
+        const regionValues = (readings) => readings
+            ? regions.map(r => readings[r]).filter(v => typeof v === 'number')
+            : [];
+
+        // PSI has a national figure; PM2.5 is per-region only, so show the worst region.
+        const nationalPsi = psi24h && typeof psi24h.national === 'number'
+            ? psi24h.national
+            : (regionValues(psi24h).length ? Math.max(...regionValues(psi24h)) : null);
+        const pm25Values = regionValues(pm251h);
+        const highestPm25 = pm25Values.length ? Math.max(...pm25Values) : null;
+
+        const summaryCard = (title, value, unit, band, note) => {
+            if (value === null) {
+                return `
+                    <div class="aq-summary-card">
+                        <p class="aq-summary-title">${title}</p>
+                        <p class="aq-summary-value">—</p>
+                        <p class="aq-summary-note">Unavailable</p>
+                    </div>`;
+            }
+            const b = band(value);
+            return `
+                <div class="aq-summary-card ${b.cls}">
+                    <p class="aq-summary-title">${title}</p>
+                    <p class="aq-summary-value">${value}<span class="aq-unit">${unit}</span></p>
+                    <span class="aq-band">${b.label}</span>
+                    <p class="aq-summary-note">${note}</p>
+                </div>`;
+        };
+
+        const cell = (readings, region, band) => {
+            if (!readings || typeof readings[region] !== 'number') return '<td class="aq-cell">—</td>';
+            const value = readings[region];
+            return `<td class="aq-cell"><span class="aq-pill ${band(value).cls}">${value}</span></td>`;
+        };
+
+        const rows = regions.map(region => `
+            <tr>
+                <th scope="row">${region.charAt(0).toUpperCase() + region.slice(1)}</th>
+                ${cell(psi24h, region, psiBand)}
+                ${cell(pm251h, region, pm25Band)}
+            </tr>`).join('');
+
+        psiContainer.innerHTML = `
+            <div class="aq-summary-grid">
+                ${summaryCard('24-hr PSI', nationalPsi, '', psiBand, 'National')}
+                ${summaryCard('1-hr PM2.5', highestPm25, ' µg/m³', pm25Band, 'Highest region')}
+            </div>
+            <div class="aq-table-wrap">
+                <table class="aq-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Region</th>
+                            <th scope="col">24-hr PSI</th>
+                            <th scope="col">1-hr PM2.5</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    };
+
     // ---- Update All Data ----
     const updateAllData = () => {
         handleTrainAlerts();
         displayTrafficIncidents();
         displayTrafficImages();
         displayWeatherForecast();
+        displayAirQuality();
         const now = new Date();
         lastUpdatedSpan.textContent = `Updated ${now.toLocaleTimeString('en-SG', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
     };
