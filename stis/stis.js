@@ -346,6 +346,7 @@
     const btn = $('sound-toggle');
     if (!url) return;
     btn.classList.remove('hidden');
+    $('credit-audio').classList.remove('hidden');
     const update = () => {
       btn.textContent = soundOn ? '🔊' : '🔇';
       btn.title = soundOn ? 'Announcements on (click to mute)' : 'Click to enable platform announcements';

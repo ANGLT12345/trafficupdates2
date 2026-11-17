@@ -352,3 +352,22 @@ body {
 .sound-toggle[aria-pressed="true"] {
   opacity: 1;
 }
+
+/* ===== Credit (top-left corner) ===== */
+.credit {
+  position: absolute;
+  top: 0.6cqw;
+  left: 1.4cqw;
+  font-size: 1.3cqw;
+  line-height: 1;
+  color: #888;
+  z-index: 1;
+}
+
+.credit a {
+  color: #aaa;
+}
+
+.picker-desc a {
+  color: #8ab4ff;
+}
