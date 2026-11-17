@@ -1020,3 +1020,9 @@ footer strong {
         padding: 10px 12px;
     }
 }
+
+.stis-link {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+}

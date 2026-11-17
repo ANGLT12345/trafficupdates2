@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MRT STIS Display</title>
+  <link rel="stylesheet" href="stis.css" />
+</head>
+<body>
+
+  <!-- 16:9 STIS Screen Container -->
+  <main class="stis-screen" id="stis-screen">
+
+    <!-- Next Train Screen -->
+    <section id="view-schedule" class="schedule-view">
+      <header class="top-bar">
+        <div class="platform-name" id="platform-label">Platform -</div>
+        <div class="arriving-header">Arriving in</div>
+      </header>
+
+      <!-- 1st Upcoming Train Row -->
+      <div class="train-row" id="train-1">
+        <div class="train-info">
+          <div class="direction" id="train-1-dir"></div>
+          <div class="destination-line">
+            <span class="prefix" id="train-1-prefix"></span>
+            <span class="caplet hidden" id="train-1-caplet"></span>
+            <span class="station-name" id="train-1-station"></span>
+          </div>
+        </div>
+        <div class="eta-block">
+          <span class="eta-number" id="train-1-eta"></span>
+          <span class="eta-unit" id="train-1-unit"></span>
+        </div>
+      </div>
+
+      <!-- 2nd Upcoming Train Row -->
+      <div class="train-row" id="train-2">
+        <div class="train-info">
+          <div class="direction" id="train-2-dir"></div>
+          <div class="destination-line">
+            <span class="prefix" id="train-2-prefix"></span>
+            <span class="caplet hidden" id="train-2-caplet"></span>
+            <span class="station-name" id="train-2-station"></span>
+          </div>
+        </div>
+        <div class="eta-block">
+          <span class="eta-number" id="train-2-eta"></span>
+          <span class="eta-unit" id="train-2-unit"></span>
+        </div>
+      </div>
+
+      <!-- Bottom Clock Footer -->
+      <footer class="bottom-bar">
+        <div class="clock" id="system-clock">--:--:--</div>
+        <div class="service-note" id="service-note"></div>
+      </footer>
+    </section>
+
+    <!-- Train Arriving Screen -->
+    <section id="view-arriving" class="arriving-view hidden">
+      <div class="arr-direction blink-yellow" id="arr-dir"></div>
+      <div class="arr-prefix" id="arr-prefix"></div>
+      <span class="caplet caplet-large" id="arr-caplet"></span>
+      <div class="arr-station" id="arr-station"></div>
+    </section>
+
+  </main>
+
+  <!-- Platform picker (shown when no / unknown ?stop=) -->
+  <div id="picker" class="picker hidden">
+    <h1>MRT Platform Screens</h1>
+    <p class="picker-desc">Arrival times are estimated from a typical timetable — LTA does not publish live train arrivals. Add <code>?stop=CC15_A</code> to the URL to open a platform directly.</p>
+    <div id="picker-list"></div>
+    <p class="picker-back"><a href="../">← Back to SG Traffic</a></p>
+  </div>
+
+  <script src="stis.js"></script>
+</body>
+</html>

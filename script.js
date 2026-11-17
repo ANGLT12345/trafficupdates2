@@ -63,9 +63,26 @@ document.addEventListener('DOMContentLoaded', () => {
         startCountdown();
     });
 
+    // ---- Security helpers ----
+    // All text from LTA / data.gov.sg is treated as untrusted and escaped
+    // before being placed into HTML templates.
+    const escapeHTML = (value) => String(value ?? '').replace(/[&<>"'`]/g, (ch) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;'
+    }[ch]));
+
+    // Only allow absolute https: URLs from the API for image sources.
+    const safeHttpsUrl = (value) => {
+        try {
+            const url = new URL(String(value));
+            return url.protocol === 'https:' ? url.href : '';
+        } catch {
+            return '';
+        }
+    };
+
     // ---- Data Fetching ----
     const fetchLTAData = async (endpoint) => {
-        const proxyUrl = `/api/proxy?endpoint=${endpoint}`;
+        const proxyUrl = `/api/proxy?endpoint=${encodeURIComponent(endpoint)}`;
         try {
             const response = await fetch(proxyUrl);
             if (!response.ok) {
@@ -276,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sortedGroupKeys.forEach(type => {
             const chip = document.createElement('span');
             chip.classList.add('summary-chip');
-            chip.innerHTML = `${type} <span class="chip-count">${groupedIncidents[type].length}</span>`;
+            chip.innerHTML = `${escapeHTML(type)} <span class="chip-count">${groupedIncidents[type].length}</span>`;
             chip.addEventListener('click', () => {
                 const target = document.getElementById(`group-${type.replace(/\s+/g, '-')}`);
                 if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -302,12 +319,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const incidentDiv = document.createElement('div');
                 incidentDiv.classList.add('incident-item');
                 const iconUrl = incidentIcons[incident.Type] || defaultIcon;
-                const cleanedMessage = incident.Message.replace(/^\(\d{2}\/\d{2}\)\d{2}:\d{2}\s*/, '');
+                const cleanedMessage = String(incident.Message ?? '').replace(/^\(\d{2}\/\d{2}\)\d{2}:\d{2}\s*/, '');
 
                 incidentDiv.innerHTML = `
-                    <img src="${iconUrl}" alt="${incident.Type}" class="incident-icon">
+                    <img src="${iconUrl}" alt="${escapeHTML(incident.Type)}" class="incident-icon">
                     <div class="incident-details">
-                        <p>${cleanedMessage}</p>
+                        <p>${escapeHTML(cleanedMessage)}</p>
                     </div>
                 `;
                 return incidentDiv;
@@ -380,10 +397,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const landmark = cameraLandmarks[image.CameraID];
                     const cameraLabel = landmark || `Camera ${image.CameraID}`;
                     imageDiv.innerHTML = `
-                        <img src="${image.ImageLink}" alt="${cameraLabel}" loading="lazy">
+                        <img src="${escapeHTML(safeHttpsUrl(image.ImageLink))}" alt="${escapeHTML(cameraLabel)}" loading="lazy">
                         <div class="image-item-info">
-                            <p>${cameraLabel}</p>
-                            <span class="camera-time">${updateTime}</span>
+                            <p>${escapeHTML(cameraLabel)}</p>
+                            <span class="camera-time">${escapeHTML(updateTime)}</span>
                         </div>
                     `;
                     imagesContainer.appendChild(imageDiv);
@@ -462,8 +479,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const regionDiv = document.createElement('div');
                         regionDiv.classList.add('region-forecast-item');
                         regionDiv.innerHTML = `
-                            <img src="${weatherIcons[forecastText] || defaultWeatherIcon}" alt="${forecastText}">
-                            <span><strong>${region.charAt(0).toUpperCase() + region.slice(1)}:</strong> ${forecastText}</span>
+                            <img src="${weatherIcons[forecastText] || defaultWeatherIcon}" alt="${escapeHTML(forecastText)}">
+                            <span><strong>${escapeHTML(region.charAt(0).toUpperCase() + region.slice(1))}:</strong> ${escapeHTML(forecastText)}</span>
                         `;
                         regionsList.appendChild(regionDiv);
                     }
@@ -478,20 +495,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 statsContainer.innerHTML = `
                     <div class="weather-text">
                         <p><strong>Overall Forecast</strong></p>
-                        <p>${general.forecast}</p>
+                        <p>${escapeHTML(general.forecast)}</p>
                     </div>
                     <div class="weather-stats">
                         <div class="weather-stats-item">
                             <img src="https://img.icons8.com/material-outlined/24/thermometer.png" alt="Temperature">
-                            <span>${general.temperature.low}°C – ${general.temperature.high}°C</span>
+                            <span>${escapeHTML(general.temperature.low)}°C – ${escapeHTML(general.temperature.high)}°C</span>
                         </div>
                         <div class="weather-stats-item">
                             <img src="https://img.icons8.com/ios-glyphs/30/hygrometer.png" alt="Humidity">
-                            <span>${general.relative_humidity.low}% – ${general.relative_humidity.high}%</span>
+                            <span>${escapeHTML(general.relative_humidity.low)}% – ${escapeHTML(general.relative_humidity.high)}%</span>
                         </div>
                         <div class="weather-stats-item">
                             <img src="https://img.icons8.com/material-outlined/24/wind.png" alt="Wind">
-                            <span>${general.wind.direction} ${general.wind.speed.low} – ${general.wind.speed.high} km/h</span>
+                            <span>${escapeHTML(general.wind.direction)} ${escapeHTML(general.wind.speed.low)} – ${escapeHTML(general.wind.speed.high)} km/h</span>
                         </div>
                     </div>
                 `;

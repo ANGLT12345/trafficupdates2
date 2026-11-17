@@ -1,0 +1,330 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --line-ns: #d42e12;
+  --line-ew: #009645;
+  --line-ne: #9900aa;
+  --line-cc: #fa9e0d;
+  --line-dt: #005ec4;
+  --line-te: #9d5b25;
+}
+
+html, body {
+  background-color: #000;
+}
+
+body {
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ===== 16:9 screen ===== */
+.stis-screen {
+  width: 100vw;
+  height: 56.25vw;
+  max-height: 100vh;
+  max-width: 177.78vh;
+  background-color: #000;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  container-type: inline-size;
+  overflow: hidden;
+}
+
+/* ===== Schedule view ===== */
+.schedule-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.top-bar {
+  height: 14%;
+  padding: 0 3.2cqw 1cqw 1.4cqw;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 0.32cqw solid #fff;
+}
+
+.platform-name,
+.prefix,
+.station-name {
+  font-size: 4.7cqw;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.prefix,
+.station-name {
+  white-space: nowrap;
+}
+
+.arriving-header,
+.direction,
+.eta-unit,
+.clock,
+.service-note {
+  font-size: 3.7cqw;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.train-row {
+  height: 36.2%;
+  padding: 3.6cqw 3.2cqw 0 1.4cqw;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 0.32cqw solid #fff;
+}
+
+.train-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2.6cqw;
+  min-width: 0;
+}
+
+.direction:empty {
+  min-height: 3.7cqw;
+}
+
+.destination-line {
+  display: flex;
+  align-items: center;
+  gap: 1.3cqw;
+}
+
+.eta-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 8.5cqw;
+  margin-top: -0.8cqw;
+}
+
+.eta-number {
+  font-size: 12.2cqw;
+  font-weight: 700;
+  line-height: 0.88;
+}
+
+.eta-unit {
+  margin-top: 0.9cqw;
+}
+
+.bottom-bar {
+  height: 13.6%;
+  padding: 0 3.2cqw 0 1.4cqw;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.clock {
+  font-variant-numeric: tabular-nums;
+}
+
+.service-note {
+  color: #ffff00;
+}
+
+/* ===== Caplets (station code pills) ===== */
+.caplet {
+  display: inline-flex;
+  align-items: stretch;
+  border: 0.3cqw solid #fff;
+  border-radius: 999px;
+  overflow: hidden;
+  height: 4.4cqw;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.caplet-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.1cqw;
+  color: #fff;
+  font-weight: 700;
+  font-size: 2.5cqw;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.caplet-seg + .caplet-seg {
+  border-left: 0.25cqw solid #fff;
+}
+
+.caplet-large {
+  height: 10.2cqw;
+  border-width: 0.6cqw;
+  margin-bottom: 3.4cqw;
+}
+
+.caplet-large .caplet-seg {
+  font-size: 5.6cqw;
+  padding: 0 2.4cqw;
+}
+
+.caplet-large .caplet-seg + .caplet-seg {
+  border-left-width: 0.5cqw;
+}
+
+.line-ns { background-color: var(--line-ns); }
+.line-ew { background-color: var(--line-ew); }
+.line-ne { background-color: var(--line-ne); }
+.line-cc { background-color: var(--line-cc); }
+.line-dt { background-color: var(--line-dt); }
+.line-te { background-color: var(--line-te); }
+
+/* ===== Arriving view ===== */
+.arriving-view {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3.8cqw 2cqw 2cqw;
+}
+
+@keyframes blinkYellow {
+  0%, 100% { color: #fff; }
+  50% { color: #ff0; }
+}
+
+.blink-yellow {
+  animation: blinkYellow 2s steps(1) infinite;
+}
+
+.arr-direction {
+  font-size: 4.1cqw;
+  line-height: 1.1;
+  margin-bottom: 1.8cqw;
+}
+
+.arr-prefix,
+.arr-station {
+  font-size: 7cqw;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.arr-prefix {
+  margin-bottom: 3.4cqw;
+}
+
+.arr-prefix:empty {
+  display: none;
+}
+
+/* ===== Picker ===== */
+.picker {
+  width: 100%;
+  max-width: 960px;
+  padding: 32px 16px 48px;
+  align-self: flex-start;
+}
+
+.picker h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.picker h2 {
+  font-size: 20px;
+  margin: 28px 0 12px;
+}
+
+.picker-desc,
+.picker-error {
+  color: #bbb;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.picker-error {
+  color: #ff0;
+  margin-top: 8px;
+}
+
+.picker code {
+  background: #222;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.picker-grid a {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid #333;
+  border-radius: 10px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.picker-grid a:hover,
+.picker-grid a:focus-visible {
+  border-color: #fff;
+  background: #111;
+}
+
+.picker .caplet {
+  height: 24px;
+  border-width: 2px;
+}
+
+.picker .caplet-seg {
+  font-size: 13px;
+  padding: 0 8px;
+}
+
+.picker .caplet-seg + .caplet-seg {
+  border-left-width: 2px;
+}
+
+.picker-label {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.picker-sub {
+  color: #aaa;
+  font-size: 14px;
+}
+
+.picker-back {
+  margin-top: 32px;
+}
+
+.picker-back a {
+  color: #8ab4ff;
+}
