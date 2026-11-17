@@ -328,3 +328,27 @@ body {
 .picker-back a {
   color: #8ab4ff;
 }
+
+/* ===== Announcement toggle ===== */
+.bottom-bar .service-note {
+  margin-left: auto;
+}
+
+.sound-toggle {
+  margin-left: 2cqw;
+  background: none;
+  border: 0.2cqw solid #555;
+  border-radius: 0.8cqw;
+  color: #fff;
+  font-size: 2.6cqw;
+  line-height: 1;
+  padding: 0.5cqw 0.9cqw;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.sound-toggle:hover,
+.sound-toggle:focus-visible,
+.sound-toggle[aria-pressed="true"] {
+  opacity: 1;
+}

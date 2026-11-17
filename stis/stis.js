@@ -27,37 +27,37 @@
       // Platform A runs with increasing station numbers, B with decreasing.
       directions: { A: 'Anticlockwise', B: 'Clockwise' },
       stations: [
-        { n: 4, name: 'Promenade', codes: ['CC4', 'DT15'] },
-        { n: 5, name: 'Nicoll Highway', codes: ['CC5'] },
-        { n: 6, name: 'Stadium', codes: ['CC6'] },
-        { n: 7, name: 'Mountbatten', codes: ['CC7'] },
-        { n: 8, name: 'Dakota', codes: ['CC8'] },
-        { n: 9, name: 'Paya Lebar', codes: ['CC9', 'EW8'] },
-        { n: 10, name: 'MacPherson', codes: ['CC10', 'DT26'] },
-        { n: 11, name: 'Tai Seng', codes: ['CC11'] },
-        { n: 12, name: 'Bartley', codes: ['CC12'] },
-        { n: 13, name: 'Serangoon', codes: ['CC13', 'NE12'] },
-        { n: 14, name: 'Lorong Chuan', codes: ['CC14'] },
-        { n: 15, name: 'Bishan', codes: ['CC15', 'NS17'] },
-        { n: 16, name: 'Marymount', codes: ['CC16'] },
-        { n: 17, name: 'Caldecott', codes: ['CC17', 'TE9'] },
-        { n: 18, name: 'Bukit Brown', codes: ['CC18'], open: false },
-        { n: 19, name: 'Botanic Gardens', codes: ['CC19', 'DT9'] },
-        { n: 20, name: 'Farrer Road', codes: ['CC20'] },
-        { n: 21, name: 'Holland Village', codes: ['CC21'] },
-        { n: 22, name: 'Buona Vista', codes: ['CC22', 'EW21'] },
-        { n: 23, name: 'one-north', codes: ['CC23'] },
-        { n: 24, name: 'Kent Ridge', codes: ['CC24'] },
-        { n: 25, name: 'Haw Par Villa', codes: ['CC25'] },
-        { n: 26, name: 'Pasir Panjang', codes: ['CC26'] },
-        { n: 27, name: 'Labrador Park', codes: ['CC27'] },
-        { n: 28, name: 'Telok Blangah', codes: ['CC28'] },
-        { n: 29, name: 'HarbourFront', codes: ['CC29', 'NE1'] },
-        { n: 30, name: 'Keppel', codes: ['CC30'] },
-        { n: 31, name: 'Cantonment', codes: ['CC31'] },
-        { n: 32, name: 'Prince Edward Road', codes: ['CC32'] },
-        { n: 33, name: 'Marina Bay', codes: ['CC33', 'NS27', 'TE20'] },
-        { n: 34, name: 'Bayfront', codes: ['CC34', 'DT16'] }
+        { n: 4, name: 'Promenade', abbr: 'PMN', codes: ['CC4', 'DT15'] },
+        { n: 5, name: 'Nicoll Highway', abbr: 'NCH', codes: ['CC5'] },
+        { n: 6, name: 'Stadium', abbr: 'SDM', codes: ['CC6'] },
+        { n: 7, name: 'Mountbatten', abbr: 'MBT', codes: ['CC7'] },
+        { n: 8, name: 'Dakota', abbr: 'DKT', codes: ['CC8'] },
+        { n: 9, name: 'Paya Lebar', abbr: 'PYL', codes: ['CC9', 'EW8'] },
+        { n: 10, name: 'MacPherson', abbr: 'MPS', codes: ['CC10', 'DT26'] },
+        { n: 11, name: 'Tai Seng', abbr: 'TSG', codes: ['CC11'] },
+        { n: 12, name: 'Bartley', abbr: 'BLY', codes: ['CC12'] },
+        { n: 13, name: 'Serangoon', abbr: 'SER', codes: ['CC13', 'NE12'] },
+        { n: 14, name: 'Lorong Chuan', abbr: 'LRC', codes: ['CC14'] },
+        { n: 15, name: 'Bishan', abbr: 'BSH', codes: ['CC15', 'NS17'] },
+        { n: 16, name: 'Marymount', abbr: 'MRM', codes: ['CC16'] },
+        { n: 17, name: 'Caldecott', abbr: 'CDT', codes: ['CC17', 'TE9'] },
+        { n: 18, name: 'Bukit Brown', abbr: 'BKB', codes: ['CC18'], open: false },
+        { n: 19, name: 'Botanic Gardens', abbr: 'BTN', codes: ['CC19', 'DT9'] },
+        { n: 20, name: 'Farrer Road', abbr: 'FRR', codes: ['CC20'] },
+        { n: 21, name: 'Holland Village', abbr: 'HLV', codes: ['CC21'] },
+        { n: 22, name: 'Buona Vista', abbr: 'BNV', codes: ['CC22', 'EW21'] },
+        { n: 23, name: 'one-north', abbr: 'ONH', codes: ['CC23'] },
+        { n: 24, name: 'Kent Ridge', abbr: 'KRG', codes: ['CC24'] },
+        { n: 25, name: 'Haw Par Villa', abbr: 'HPV', codes: ['CC25'] },
+        { n: 26, name: 'Pasir Panjang', abbr: 'PPJ', codes: ['CC26'] },
+        { n: 27, name: 'Labrador Park', abbr: 'LBD', codes: ['CC27'] },
+        { n: 28, name: 'Telok Blangah', abbr: 'TLB', codes: ['CC28'] },
+        { n: 29, name: 'HarbourFront', abbr: 'HBF', codes: ['CC29', 'NE1'] },
+        { n: 30, name: 'Keppel', abbr: 'KPL', codes: ['CC30'] },
+        { n: 31, name: 'Cantonment', abbr: 'CTM', codes: ['CC31'] },
+        { n: 32, name: 'Prince Edward Road', abbr: 'PER', codes: ['CC32'] },
+        { n: 33, name: 'Marina Bay', abbr: 'MRB', codes: ['CC33', 'NS27', 'TE20'] },
+        { n: 34, name: 'Bayfront', abbr: 'BFT', codes: ['CC34', 'DT16'] }
       ]
     },
     TE: {
@@ -109,6 +109,21 @@
         .flatMap(s => [`TE${s.n}_A`, `TE${s.n}_B`])
     }
   ];
+
+  // ---- Platform announcements ----
+  // LTA's CCL wayfinding site (www.lta.gov.sg/cclwayfinding/) hosts the real
+  // pre-arrival announcements for Circle Line loop services, e.g.
+  //   PA/Pre-arrival_ACW_Loop/PLATFORM_A_ACW_LOOP_CDT dir.m4a
+  // = "Platform A, anticlockwise loop, towards Caldecott". There is no TEL set.
+  const PA_BASE = 'https://www.lta.gov.sg/cclwayfinding/PA/';
+
+  function announcementUrl(stop, dest) {
+    if (stop.lineCode !== 'CC' || !dest.station || !dest.station.abbr) return null;
+    const acw = stop.plat === 'A';
+    const file = `${acw ? 'Pre-arrival_ACW_Loop' : 'Pre-arrival_CW_Loop'}/` +
+      `PLATFORM_${stop.plat}_${acw ? 'ACW' : 'CW'}_LOOP_${dest.station.abbr} dir.m4a`;
+    return PA_BASE + encodeURI(file);
+  }
 
   // ---- Approximate headways (seconds) ----
   // Service runs roughly 05:30 to 00:15. These are estimates, not LTA data.
@@ -223,6 +238,9 @@
   let dest = null;
   let cache = { key: '', times: [] };
   const lastRendered = {};
+  let audio = null;          // HTMLAudioElement, created once sound is enabled
+  let soundOn = false;
+  let wasArriving = false;
 
   function timesForServiceDay(now) {
     // Before 03:00 counts as the previous service day (times beyond 24:00).
@@ -294,6 +312,13 @@
       next - secondsOfDay <= SHOW_BEFORE_SECONDS &&
       next - secondsOfDay >= -HIDE_AFTER_SECONDS;
 
+    // Play the announcement once, as the arriving screen appears.
+    if (arriving && !wasArriving && soundOn && audio) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
+    wasArriving = arriving;
+
     $('view-arriving').classList.toggle('hidden', !arriving);
     $('view-schedule').classList.toggle('hidden', arriving);
 
@@ -312,6 +337,32 @@
     $('arr-prefix').textContent = dest.prefix;
     $('arr-station').textContent = dest.station ? dest.station.name : '';
     buildCaplet($('arr-caplet'), dest.station);
+  }
+
+  // Browsers block audio until the viewer interacts with the page, so sound
+  // starts off and is turned on with the speaker button.
+  function setupSound() {
+    const url = announcementUrl(stop, dest);
+    const btn = $('sound-toggle');
+    if (!url) return;
+    btn.classList.remove('hidden');
+    const update = () => {
+      btn.textContent = soundOn ? '🔊' : '🔇';
+      btn.title = soundOn ? 'Announcements on (click to mute)' : 'Click to enable platform announcements';
+      btn.setAttribute('aria-pressed', String(soundOn));
+    };
+    btn.addEventListener('click', () => {
+      if (!audio) {
+        audio = new Audio(url);
+        audio.preload = 'auto';
+      }
+      soundOn = !soundOn;
+      if (!soundOn) audio.pause();
+      // A train already arriving: play straight away so the click gives feedback.
+      else if (wasArriving) { audio.currentTime = 0; audio.play().catch(() => {}); }
+      update();
+    });
+    update();
   }
 
   function showPicker(invalidId) {
@@ -366,6 +417,7 @@
     document.title = `${stop.station.name} Platform ${stop.plat} – ${stop.line.name} STIS`;
     $('platform-label').textContent = `Platform ${stop.plat}`;
     setupArrivingView();
+    setupSound();
     tick();
     setInterval(tick, 1000);
   });
