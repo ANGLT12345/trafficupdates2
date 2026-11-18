@@ -2,6 +2,7 @@
 //
 // Usage:  /stis/?stop=CC15_A   (Circle Line, Bishan, Platform A)
 //         /stis/?stop=TE9_B    (Thomson-East Coast Line, Caldecott, Platform B)
+//         /stis/?stop=NS9_A    (any MRT line: NS, EW, CG, NE, CC, DT, TE)
 //         /stis/?station=TE9   (station board: next 10 trains, all platforms)
 //         /stis/               (search for a platform or station)
 //
@@ -19,12 +20,153 @@
   const BOARD_MAX_ETA_SECONDS = 60 * 60;
 
   // ---- Line colours ----
-  const LINE_CLASS = { NS: 'ns', EW: 'ew', NE: 'ne', CC: 'cc', DT: 'dt', TE: 'te' };
+  const LINE_CLASS = {
+    NS: 'ns', EW: 'ew', CG: 'ew', NE: 'ne', CC: 'cc', DT: 'dt', TE: 'te',
+    BP: 'lrt', ST: 'lrt', PT: 'lrt'
+  };
+  const LINE_ORDER = ['NS', 'EW', 'NE', 'CC', 'DT', 'TE'];
 
   // ---- Network data ----
   // `codes` = all station codes shown on the caplet (own line first).
   // `open: false` = station not in service, skipped when generating trains.
   const LINES = {
+    NS: {
+      name: 'North-South Line',
+      stations: [
+        { n: 1, name: 'Jurong East', codes: ['NS1', 'EW24'] },
+        { n: 2, name: 'Bukit Batok', codes: ['NS2'] },
+        { n: 3, name: 'Bukit Gombak', codes: ['NS3'] },
+        { n: 4, name: 'Choa Chu Kang', codes: ['NS4', 'BP1'] },
+        { n: 5, name: 'Yew Tee', codes: ['NS5'] },
+        { n: 7, name: 'Kranji', codes: ['NS7'] },
+        { n: 8, name: 'Marsiling', codes: ['NS8'] },
+        { n: 9, name: 'Woodlands', codes: ['NS9', 'TE2'] },
+        { n: 10, name: 'Admiralty', codes: ['NS10'] },
+        { n: 11, name: 'Sembawang', codes: ['NS11'] },
+        { n: 12, name: 'Canberra', codes: ['NS12'] },
+        { n: 13, name: 'Yishun', codes: ['NS13'] },
+        { n: 14, name: 'Khatib', codes: ['NS14'] },
+        { n: 15, name: 'Yio Chu Kang', codes: ['NS15'] },
+        { n: 16, name: 'Ang Mo Kio', codes: ['NS16'] },
+        { n: 17, name: 'Bishan', codes: ['NS17', 'CC15'] },
+        { n: 18, name: 'Braddell', codes: ['NS18'] },
+        { n: 19, name: 'Toa Payoh', codes: ['NS19'] },
+        { n: 20, name: 'Novena', codes: ['NS20'] },
+        { n: 21, name: 'Newton', codes: ['NS21', 'DT11'] },
+        { n: 22, name: 'Orchard', codes: ['NS22', 'TE14'] },
+        { n: 23, name: 'Somerset', codes: ['NS23'] },
+        { n: 24, name: 'Dhoby Ghaut', codes: ['NS24', 'NE6', 'CC1'] },
+        { n: 25, name: 'City Hall', codes: ['NS25', 'EW13'] },
+        { n: 26, name: 'Raffles Place', codes: ['NS26', 'EW14'] },
+        { n: 27, name: 'Marina Bay', codes: ['NS27', 'CC33', 'TE20'] },
+        { n: 28, name: 'Marina South Pier', codes: ['NS28'] }
+      ]
+    },
+    EW: {
+      name: 'East-West Line',
+      stations: [
+        { n: 1, name: 'Pasir Ris', codes: ['EW1'] },
+        { n: 2, name: 'Tampines', codes: ['EW2', 'DT32'] },
+        { n: 3, name: 'Simei', codes: ['EW3'] },
+        { n: 4, name: 'Tanah Merah', codes: ['EW4'] },
+        { n: 5, name: 'Bedok', codes: ['EW5'] },
+        { n: 6, name: 'Kembangan', codes: ['EW6'] },
+        { n: 7, name: 'Eunos', codes: ['EW7'] },
+        { n: 8, name: 'Paya Lebar', codes: ['EW8', 'CC9'] },
+        { n: 9, name: 'Aljunied', codes: ['EW9'] },
+        { n: 10, name: 'Kallang', codes: ['EW10'] },
+        { n: 11, name: 'Lavender', codes: ['EW11'] },
+        { n: 12, name: 'Bugis', codes: ['EW12', 'DT14'] },
+        { n: 13, name: 'City Hall', codes: ['EW13', 'NS25'] },
+        { n: 14, name: 'Raffles Place', codes: ['EW14', 'NS26'] },
+        { n: 15, name: 'Tanjong Pagar', codes: ['EW15'] },
+        { n: 16, name: 'Outram Park', codes: ['EW16', 'NE3', 'TE17'] },
+        { n: 17, name: 'Tiong Bahru', codes: ['EW17'] },
+        { n: 18, name: 'Redhill', codes: ['EW18'] },
+        { n: 19, name: 'Queenstown', codes: ['EW19'] },
+        { n: 20, name: 'Commonwealth', codes: ['EW20'] },
+        { n: 21, name: 'Buona Vista', codes: ['EW21', 'CC22'] },
+        { n: 22, name: 'Dover', codes: ['EW22'] },
+        { n: 23, name: 'Clementi', codes: ['EW23'] },
+        { n: 24, name: 'Jurong East', codes: ['EW24', 'NS1'] },
+        { n: 25, name: 'Chinese Garden', codes: ['EW25'] },
+        { n: 26, name: 'Lakeside', codes: ['EW26'] },
+        { n: 27, name: 'Boon Lay', codes: ['EW27'] },
+        { n: 28, name: 'Pioneer', codes: ['EW28'] },
+        { n: 29, name: 'Joo Koon', codes: ['EW29'] },
+        { n: 30, name: 'Gul Circle', codes: ['EW30'] },
+        { n: 31, name: 'Tuas Crescent', codes: ['EW31'] },
+        { n: 32, name: 'Tuas West Road', codes: ['EW32'] },
+        { n: 33, name: 'Tuas Link', codes: ['EW33'] },
+        // Changi Airport branch (shuttle from Tanah Merah)
+        { n: 1, name: 'Expo', codes: ['CG1', 'DT35'] },
+        { n: 2, name: 'Changi Airport', codes: ['CG2'] }
+      ]
+    },
+    NE: {
+      name: 'North East Line',
+      stations: [
+        { n: 1, name: 'HarbourFront', codes: ['NE1', 'CC29'] },
+        { n: 3, name: 'Outram Park', codes: ['NE3', 'EW16', 'TE17'] },
+        { n: 4, name: 'Chinatown', codes: ['NE4', 'DT19'] },
+        { n: 5, name: 'Clarke Quay', codes: ['NE5'] },
+        { n: 6, name: 'Dhoby Ghaut', codes: ['NE6', 'NS24', 'CC1'] },
+        { n: 7, name: 'Little India', codes: ['NE7', 'DT12'] },
+        { n: 8, name: 'Farrer Park', codes: ['NE8'] },
+        { n: 9, name: 'Boon Keng', codes: ['NE9'] },
+        { n: 10, name: 'Potong Pasir', codes: ['NE10'] },
+        { n: 11, name: 'Woodleigh', codes: ['NE11'] },
+        { n: 12, name: 'Serangoon', codes: ['NE12', 'CC13'] },
+        { n: 13, name: 'Kovan', codes: ['NE13'] },
+        { n: 14, name: 'Hougang', codes: ['NE14'] },
+        { n: 15, name: 'Buangkok', codes: ['NE15'] },
+        { n: 16, name: 'Sengkang', codes: ['NE16', 'STC'] },
+        { n: 17, name: 'Punggol', codes: ['NE17', 'PTC'] },
+        { n: 18, name: 'Punggol Coast', codes: ['NE18'] }
+      ]
+    },
+    DT: {
+      name: 'Downtown Line',
+      stations: [
+        { n: 1, name: 'Bukit Panjang', codes: ['DT1', 'BP6'] },
+        { n: 2, name: 'Cashew', codes: ['DT2'] },
+        { n: 3, name: 'Hillview', codes: ['DT3'] },
+        { n: 4, name: 'Hume', codes: ['DT4'] },
+        { n: 5, name: 'Beauty World', codes: ['DT5'] },
+        { n: 6, name: 'King Albert Park', codes: ['DT6'] },
+        { n: 7, name: 'Sixth Avenue', codes: ['DT7'] },
+        { n: 8, name: 'Tan Kah Kee', codes: ['DT8'] },
+        { n: 9, name: 'Botanic Gardens', codes: ['DT9', 'CC19'] },
+        { n: 10, name: 'Stevens', codes: ['DT10', 'TE11'] },
+        { n: 11, name: 'Newton', codes: ['DT11', 'NS21'] },
+        { n: 12, name: 'Little India', codes: ['DT12', 'NE7'] },
+        { n: 13, name: 'Rochor', codes: ['DT13'] },
+        { n: 14, name: 'Bugis', codes: ['DT14', 'EW12'] },
+        { n: 15, name: 'Promenade', codes: ['DT15', 'CC4'] },
+        { n: 16, name: 'Bayfront', codes: ['DT16', 'CC34'] },
+        { n: 17, name: 'Downtown', codes: ['DT17'] },
+        { n: 18, name: 'Telok Ayer', codes: ['DT18'] },
+        { n: 19, name: 'Chinatown', codes: ['DT19', 'NE4'] },
+        { n: 20, name: 'Fort Canning', codes: ['DT20'] },
+        { n: 21, name: 'Bencoolen', codes: ['DT21'] },
+        { n: 22, name: 'Jalan Besar', codes: ['DT22'] },
+        { n: 23, name: 'Bendemeer', codes: ['DT23'] },
+        { n: 24, name: 'Geylang Bahru', codes: ['DT24'] },
+        { n: 25, name: 'Mattar', codes: ['DT25'] },
+        { n: 26, name: 'MacPherson', codes: ['DT26', 'CC10'] },
+        { n: 27, name: 'Ubi', codes: ['DT27'] },
+        { n: 28, name: 'Kaki Bukit', codes: ['DT28'] },
+        { n: 29, name: 'Bedok North', codes: ['DT29'] },
+        { n: 30, name: 'Bedok Reservoir', codes: ['DT30'] },
+        { n: 31, name: 'Tampines West', codes: ['DT31'] },
+        { n: 32, name: 'Tampines', codes: ['DT32', 'EW2'] },
+        { n: 33, name: 'Tampines East', codes: ['DT33'] },
+        { n: 34, name: 'Upper Changi', codes: ['DT34'] },
+        { n: 35, name: 'Expo', codes: ['DT35', 'CG1'] },
+        { n: 36, name: 'Xilin', codes: ['DT36'], open: false },
+        { n: 37, name: 'Sungei Bedok', codes: ['DT37', 'TE31'], open: false }
+      ]
+    },
     CC: {
       name: 'Circle Line',
       stations: [
@@ -118,6 +260,11 @@
 
   // Combined headway per platform on the busiest section.
   const HEADWAYS = {
+    NS: { peak: 150, offpeak: 300, late: 420 },
+    EW: { peak: 150, offpeak: 300, late: 420 },
+    CG: { peak: 360, offpeak: 420, late: 600 },
+    NE: { peak: 180, offpeak: 300, late: 420 },
+    DT: { peak: 180, offpeak: 300, late: 420 },
     CC: { peak: 210, offpeak: 300, late: 420 },
     TE: { peak: 240, offpeak: 330, late: 420 }
   };
@@ -125,7 +272,9 @@
   // ---- Helpers ----
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
-  const isInterchange = (s) => s.codes.length > 1;
+  // An MRT interchange: another MRT line's code on the caplet (LRT links don't count).
+  const LRT_PREFIXES = new Set(['BP', 'ST', 'PT']);
+  const isInterchange = (s) => s.codes.slice(1).some(c => !LRT_PREFIXES.has(c.slice(0, 2)));
 
   function isPeak(secondsOfDay, dayOfWeek) {
     if (dayOfWeek === 0 || dayOfWeek === 6) return false;
@@ -133,8 +282,8 @@
     return (h >= 7 && h < 9.5) || (h >= 17.5 && h < 20);
   }
 
-  function headwayAt(lineCode, secondsOfDay, dayOfWeek) {
-    const hw = HEADWAYS[lineCode];
+  function headwayAt(hwKey, secondsOfDay, dayOfWeek) {
+    const hw = HEADWAYS[hwKey];
     if (secondsOfDay >= 23 * 3600) return hw.late;
     return isPeak(secondsOfDay, dayOfWeek) ? hw.peak : hw.offpeak;
   }
@@ -149,10 +298,16 @@
   //  - Turnaround services run Dhoby Ghaut CC1 <-> Prince Edward Road CC32 and
   //    show "ends at". Stations CC4–CC32 get both, alternating.
   //  - Marina Bay uses platforms C/D and Bayfront D/B for the loop.
-  // TEL: one service each way, "via <next interchange>" or "ends at <terminus>".
+  // Other lines: one service each way, "via <next interchange>" or
+  // "ends at <terminus>". Platform A runs towards higher station numbers.
+  // EWL also has the Tanah Merah <-> Changi Airport branch (platform C at
+  // Tanah Merah).
+  //
+  // A stop's id is its own-line station code plus platform, e.g. "CG1_A".
   const STOPS = new Map(); // "CC15_A" -> stop
+  const stationId = (station) => station.codes[0];
 
-  function addService({ lineCode, ordered, loop, key, platFor, dirText, destMode, audioFor, mult, phase }) {
+  function addService({ lineCode, ordered, loop, key, platFor, dirText, destMode, audioFor, mult, phase, hw }) {
     const line = LINES[lineCode];
     ordered.forEach((station, i) => {
       const ahead = loop ? ordered.slice(i + 1).concat(ordered.slice(0, i)) : ordered.slice(i + 1);
@@ -177,7 +332,7 @@
       }
 
       const plat = platFor(station);
-      const id = `${lineCode}${station.n}_${plat}`;
+      const id = `${stationId(station)}_${plat}`;
       if (!STOPS.has(id)) STOPS.set(id, { id, lineCode, line, station, plat, services: [] });
       STOPS.get(id).services.push({
         key,
@@ -187,7 +342,8 @@
         audio: audioFor ? audioFor(plat, dest) : null,
         offset: i * RUN_SECONDS_PER_STATION,
         mult,
-        phase
+        phase,
+        hw: hw || lineCode
       });
     });
   }
@@ -217,15 +373,38 @@
     addService({ lineCode: 'CC', key: 'cwTurn', ordered: [...branch].reverse(), loop: false, platFor: () => 'B',
       dirText: 'Clockwise', destMode: 'ends', audioFor: turnAudio(false), mult: 2, phase: halfOffpeak });
 
-    const teOpen = LINES.TE.stations.filter(s => s.open !== false);
-    addService({ lineCode: 'TE', key: 'teA', ordered: teOpen, loop: false, platFor: () => 'A',
-      dirText: 'Towards Bayshore', destMode: 'auto', audioFor: null, mult: 1, phase: 0 });
-    addService({ lineCode: 'TE', key: 'teB', ordered: [...teOpen].reverse(), loop: false, platFor: () => 'B',
-      dirText: 'Towards Woodlands North', destMode: 'auto', audioFor: null, mult: 1, phase: 0 });
+    // Straight lines: platform A towards the higher-numbered end, B back.
+    const linear = (lineCode, stations, platA, platB, hw) => {
+      const first = stations[0].name;
+      const last = stations[stations.length - 1].name;
+      addService({ lineCode, key: `${lineCode}-A`, ordered: stations, loop: false, platFor: () => platA,
+        dirText: `Towards ${last}`, destMode: 'auto', audioFor: null, mult: 1, phase: 0, hw });
+      addService({ lineCode, key: `${lineCode}-B`, ordered: [...stations].reverse(), loop: false,
+        platFor: () => platB, dirText: `Towards ${first}`, destMode: 'auto', audioFor: null, mult: 1, phase: 0, hw });
+    };
+    const openOf = (lineCode, prefix) => LINES[lineCode].stations
+      .filter(s => s.open !== false && stationId(s).startsWith(prefix));
+
+    linear('NS', openOf('NS', 'NS'), 'A', 'B');
+    linear('EW', openOf('EW', 'EW'), 'A', 'B');
+    // Changi Airport branch: Tanah Merah (platform C) <-> Expo <-> Changi Airport.
+    const tanahMerah = LINES.EW.stations.find(s => stationId(s) === 'EW4');
+    const cgBranch = [tanahMerah, ...openOf('EW', 'CG')];
+    addService({ lineCode: 'EW', key: 'CG-A', ordered: cgBranch, loop: false,
+      platFor: (s) => (s === tanahMerah ? 'C' : 'A'), dirText: 'Towards Changi Airport', destMode: 'ends',
+      audioFor: null, mult: 1, phase: 0, hw: 'CG' });
+    addService({ lineCode: 'EW', key: 'CG-B', ordered: [...cgBranch].reverse(), loop: false, platFor: () => 'B',
+      dirText: 'Towards Tanah Merah', destMode: 'ends', audioFor: null, mult: 1, phase: 0, hw: 'CG' });
+    linear('NE', openOf('NE', 'NE'), 'A', 'B');
+    linear('DT', openOf('DT', 'DT'), 'A', 'B');
+    linear('TE', openOf('TE', 'TE'), 'A', 'B');
+
+    // Order for sorting in the picker.
+    LINE_ORDER.forEach((lc, li) => LINES[lc].stations.forEach((s, si) => { s.order = li * 1000 + si; }));
   }
 
   function findStop(raw) {
-    const m = /^(CC|TE)(\d{1,2})_?([A-D])$/i.exec(String(raw || '').trim());
+    const m = /^([A-Z]{2})(\d{1,2})_?([A-D])$/i.exec(String(raw || '').trim());
     if (!m) return null;
     return STOPS.get(`${m[1].toUpperCase()}${parseInt(m[2], 10)}_${m[3].toUpperCase()}`) || null;
   }
@@ -237,7 +416,7 @@
       let t = SERVICE_START + svc.offset + svc.phase;
       while (t <= SERVICE_END) {
         out.push({ t, svc });
-        t += headwayAt(stop.lineCode, t % 86400, dayOfWeek) * svc.mult;
+        t += headwayAt(svc.hw, t % 86400, dayOfWeek) * svc.mult;
       }
     });
     return out.sort((a, b) => a.t - b.t);
@@ -338,18 +517,20 @@
   // ---- Station board: next trains from every platform of one station ----
   // A board is a pseudo-stop whose arrivals are the merge of its platforms.
   function findBoard(raw) {
-    const m = /^(CC|TE)(\d{1,2})$/i.exec(String(raw || '').trim());
+    const m = /^([A-Z]{2})(\d{1,2})$/i.exec(String(raw || '').trim());
     if (!m) return null;
-    return boardFor(m[1].toUpperCase(), parseInt(m[2], 10));
+    const id = `${m[1].toUpperCase()}${parseInt(m[2], 10)}`;
+    const stop = [...STOPS.values()].find(s => stationId(s.station) === id);
+    return stop ? boardFor(stop.station) : null;
   }
 
-  function boardFor(lineCode, n) {
+  function boardFor(station) {
     const platforms = [...STOPS.values()]
-      .filter(s => s.lineCode === lineCode && s.station.n === n)
+      .filter(s => s.station === station)
       .sort((a, b) => a.plat.localeCompare(b.plat));
     if (platforms.length === 0) return null;
-    const { line, station } = platforms[0];
-    return { id: `${lineCode}${n}`, isBoard: true, lineCode, line, station, platforms,
+    const { line, lineCode } = platforms[0];
+    return { id: stationId(station), isBoard: true, lineCode, line, station, platforms,
       services: platforms.flatMap(p => p.services) };
   }
 
@@ -503,18 +684,17 @@
 
     const boards = new Map();
     STOPS.forEach(s => {
-      const key = `${s.lineCode}${s.station.n}`;
-      if (!boards.has(key)) boards.set(key, boardFor(s.lineCode, s.station.n));
+      if (!boards.has(s.station)) boards.set(s.station, boardFor(s.station));
     });
     const entries = [...boards.values(), ...STOPS.values()]
-      .sort((a, b) => a.lineCode.localeCompare(b.lineCode) || a.station.n - b.station.n ||
+      .sort((a, b) => a.station.order - b.station.order ||
         (a.isBoard ? -1 : b.isBoard ? 1 : a.plat.localeCompare(b.plat)))
       .map(s => ({
         stop: s,
         // Words to match against: each search term must start one of these words.
         words: [s.station.name, s.station.abbr || '', ...s.station.codes, s.line.name,
           s.isBoard ? 'all platforms station board home next trains' : `platform ${s.plat}`,
-          s.isBoard ? s.id : `${s.lineCode}${s.station.n}${s.plat}`]
+          s.id.replace('_', '')]
           .join(' ').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
       }));
 
