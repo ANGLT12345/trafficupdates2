@@ -445,6 +445,7 @@
   const audioClips = new Map(); // url -> HTMLAudioElement
   let soundOn = false;
   let arrivingItem = null;
+  let dismissedItem = null; // arrival whose arriving screen was skipped with Enter
 
   function arrivalsForServiceDay(now) {
     // Before 03:00 counts as the previous service day (times beyond 24:00).
@@ -495,16 +496,51 @@
     buildCaplet($('arr-caplet'), svc.dest);
   }
 
+  // ---- Announcement player ----
+  // Announcements play one at a time. If another train arrives while one is
+  // playing, its announcement waits in a queue. Enter skips to the next one.
+  const announcementQueue = [];
+  let nowPlaying = null;
+
+  function clipFor(url) {
+    let clip = audioClips.get(url);
+    if (!clip) {
+      clip = new Audio(url);
+      clip.addEventListener('ended', () => { if (nowPlaying === clip) playNext(); });
+      clip.addEventListener('error', () => { if (nowPlaying === clip) playNext(); });
+      audioClips.set(url, clip);
+    }
+    return clip;
+  }
+
+  function playNext() {
+    nowPlaying = null;
+    const url = announcementQueue.shift();
+    if (!url) return;
+    const clip = clipFor(url);
+    nowPlaying = clip;
+    clip.currentTime = 0;
+    clip.play().catch(() => playNext());
+  }
+
   function playAnnouncement(svc) {
     if (!soundOn || !svc.audio) return;
-    audioClips.forEach(a => a.pause());
-    let clip = audioClips.get(svc.audio);
-    if (!clip) {
-      clip = new Audio(svc.audio);
-      audioClips.set(svc.audio, clip);
-    }
-    clip.currentTime = 0;
-    clip.play().catch(() => {});
+    announcementQueue.push(svc.audio);
+    if (!nowPlaying) playNext();
+  }
+
+  function stopAnnouncements() {
+    announcementQueue.length = 0;
+    if (nowPlaying) nowPlaying.pause();
+    nowPlaying = null;
+  }
+
+  // Enter: skip the announcement that is playing (the next queued one starts).
+  function skipAnnouncement() {
+    if (!nowPlaying) return false;
+    nowPlaying.pause();
+    playNext();
+    return true;
   }
 
   function renderClock(now, id = 'system-clock') {
@@ -541,6 +577,7 @@
   }
 
   const boardRows = [];
+  const announced = new WeakSet(); // board arrivals whose announcement has played
 
   function setupBoard(board) {
     $('stis-screen').classList.add('board-mode');
@@ -598,6 +635,10 @@
       const secs = item.t - secondsOfDay;
       const arriving = secs <= SHOW_BEFORE_SECONDS;
       row.li.classList.toggle('board-row-arriving', arriving);
+      if (arriving && !announced.has(item)) {
+        announced.add(item);
+        playAnnouncement(item.svc);
+      }
       if (arriving) {
         row.eta.textContent = 'Arriving';
       } else {
@@ -631,8 +672,10 @@
     }
     arrivingItem = arriving ? next : null;
 
-    $('view-arriving').classList.toggle('hidden', !arriving);
-    $('view-schedule').classList.toggle('hidden', arriving);
+    // Enter closes the arriving screen early for this train.
+    const showArriving = arriving && dismissedItem !== next;
+    $('view-arriving').classList.toggle('hidden', !showArriving);
+    $('view-schedule').classList.toggle('hidden', showArriving);
 
     const listed = upcoming.filter(a => a.t - secondsOfDay >= 0 && a.t - secondsOfDay <= MAX_ETA_SECONDS);
     renderRow(1, listed[0] || null, secondsOfDay);
@@ -646,22 +689,44 @@
 
   // Browsers block audio until the viewer interacts with the page, so sound
   // starts off and is turned on with the speaker button.
-  function setupSound() {
+  function setupSound(btnId = 'sound-toggle') {
     if (!stop.services.some(s => s.audio)) return;
-    const btn = $('sound-toggle');
+    const btn = $(btnId);
     btn.classList.remove('hidden');
     $('credit-audio').classList.remove('hidden');
     const update = () => {
       btn.textContent = soundOn ? '🔊' : '🔇';
-      btn.title = soundOn ? 'Announcements on (click to mute)' : 'Click to enable platform announcements';
+      btn.title = soundOn
+        ? 'Announcements on (click to mute, Enter skips the current one)'
+        : 'Click to enable platform announcements';
       btn.setAttribute('aria-pressed', String(soundOn));
     };
     btn.addEventListener('click', () => {
       soundOn = !soundOn;
-      if (!soundOn) audioClips.forEach(a => a.pause());
+      if (!soundOn) stopAnnouncements();
       update();
+      btn.blur(); // so a following Enter skips announcements instead of toggling sound
     });
     update();
+  }
+
+  // Enter: skip the playing announcement; on a platform screen also close the
+  // full-screen arriving view. Ignored while a button or link has focus, so
+  // Enter still works on them.
+  function setupEnterKey() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.repeat) return;
+      const tag = document.activeElement && document.activeElement.tagName;
+      if (tag === 'BUTTON' || tag === 'A' || tag === 'INPUT') return;
+      const skipped = skipAnnouncement();
+      if (!stop.isBoard && arrivingItem && dismissedItem !== arrivingItem) {
+        dismissedItem = arrivingItem;
+        tick();
+        e.preventDefault();
+      } else if (skipped) {
+        e.preventDefault();
+      }
+    });
   }
 
   // ---- Picker: search box with a dropdown of platforms ----
@@ -812,6 +877,8 @@
       }
       document.title = `${stop.station.name} – ${stop.line.name} station board`;
       setupBoard(stop);
+      setupSound('board-sound');
+      setupEnterKey();
       boardTick();
       setInterval(boardTick, 1000);
       return;
@@ -828,6 +895,7 @@
     document.title = `${stop.station.name} Platform ${stop.plat} – ${stop.line.name} STIS`;
     $('platform-label').textContent = `Platform ${stop.plat}`;
     setupSound();
+    setupEnterKey();
     tick();
     setInterval(tick, 1000);
   });

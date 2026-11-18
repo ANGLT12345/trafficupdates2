@@ -657,6 +657,14 @@ body {
   .board-view .service-note {
     font-size: 17px;
   }
+
+  .board-view .sound-toggle {
+    font-size: 18px;
+    padding: 6px 10px;
+    border-width: 1px;
+    border-radius: 8px;
+    margin-left: 12px;
+  }
 }
 
 .line-lrt { background-color: #748477; }
