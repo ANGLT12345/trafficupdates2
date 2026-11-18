@@ -61,6 +61,22 @@
       </footer>
     </section>
 
+    <!-- Station Board: next trains from all platforms -->
+    <section id="view-board" class="board-view hidden">
+      <header class="top-bar board-top">
+        <div class="board-title">
+          <span class="caplet" id="board-caplet"></span>
+          <span id="board-station"></span>
+        </div>
+        <div class="arriving-header">Arriving in</div>
+      </header>
+      <ol class="board-rows" id="board-rows"></ol>
+      <footer class="bottom-bar board-bottom">
+        <div class="clock" id="board-clock">--:--:--</div>
+        <div class="service-note" id="board-note"></div>
+      </footer>
+    </section>
+
     <!-- Train Arriving Screen -->
     <section id="view-arriving" class="arriving-view hidden">
       <div class="arr-direction blink-yellow" id="arr-dir"></div>
@@ -74,7 +90,7 @@
   <!-- Platform picker (shown when no / unknown ?stop=) -->
   <div id="picker" class="picker hidden">
     <h1>MRT Platform Screens</h1>
-    <p class="picker-desc">Arrival times are estimated from a typical timetable — LTA does not publish live train arrivals. Add <code>?stop=CC15_A</code> to the URL to open a platform directly.</p>
+    <p class="picker-desc">Arrival times are estimated from a typical timetable — LTA does not publish live train arrivals. Add <code>?stop=CC15_A</code> to the URL to open a platform, or <code>?station=TE9</code> for a station board with the next 10 trains.</p>
     <p id="picker-error" class="picker-error hidden"></p>
     <label class="combo-label" for="stop-search">Find a platform</label>
     <div class="combo">

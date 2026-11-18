@@ -2,7 +2,8 @@
 //
 // Usage:  /stis/?stop=CC15_A   (Circle Line, Bishan, Platform A)
 //         /stis/?stop=TE9_B    (Thomson-East Coast Line, Caldecott, Platform B)
-//         /stis/               (search for a platform)
+//         /stis/?station=TE9   (station board: next 10 trains, all platforms)
+//         /stis/               (search for a platform or station)
 //
 // LTA does not publish live train arrival times, so arrivals are generated from
 // an approximate headway timetable (see HEADWAYS). Times are estimates only.
@@ -14,6 +15,8 @@
   const SHOW_BEFORE_SECONDS = 30;   // switch to "arriving" screen this long before arrival
   const HIDE_AFTER_SECONDS = 15;    // keep "arriving" screen this long after arrival
   const MAX_ETA_SECONDS = 15 * 60;  // only list trains arriving within 15 minutes
+  const BOARD_ROWS = 10;            // trains listed on the station board
+  const BOARD_MAX_ETA_SECONDS = 60 * 60;
 
   // ---- Line colours ----
   const LINE_CLASS = { NS: 'ns', EW: 'ew', NE: 'ne', CC: 'cc', DT: 'dt', TE: 'te' };
@@ -274,7 +277,7 @@
     }
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     if (cache.key !== key) {
-      cache = { key, arrivals: arrivalsFor(stop, d.getDay()) };
+      cache = { key, arrivals: stop.isBoard ? boardArrivals(stop, d.getDay()) : arrivalsFor(stop, d.getDay()) };
     }
     return { secondsOfDay, arrivals: cache.arrivals };
   }
@@ -325,11 +328,107 @@
     clip.play().catch(() => {});
   }
 
-  function renderClock(now) {
+  function renderClock(now, id = 'system-clock') {
     const d = new Date(now);
-    $('system-clock').textContent = Math.floor(now / 4000) % 2 === 0
+    $(id).textContent = Math.floor(now / 4000) % 2 === 0
       ? `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
       : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  // ---- Station board: next trains from every platform of one station ----
+  // A board is a pseudo-stop whose arrivals are the merge of its platforms.
+  function findBoard(raw) {
+    const m = /^(CC|TE)(\d{1,2})$/i.exec(String(raw || '').trim());
+    if (!m) return null;
+    return boardFor(m[1].toUpperCase(), parseInt(m[2], 10));
+  }
+
+  function boardFor(lineCode, n) {
+    const platforms = [...STOPS.values()]
+      .filter(s => s.lineCode === lineCode && s.station.n === n)
+      .sort((a, b) => a.plat.localeCompare(b.plat));
+    if (platforms.length === 0) return null;
+    const { line, station } = platforms[0];
+    return { id: `${lineCode}${n}`, isBoard: true, lineCode, line, station, platforms,
+      services: platforms.flatMap(p => p.services) };
+  }
+
+  function boardArrivals(board, dayOfWeek) {
+    return board.platforms
+      .flatMap(p => arrivalsFor(p, dayOfWeek).map(a => ({ ...a, plat: p.plat })))
+      .sort((a, b) => a.t - b.t);
+  }
+
+  const boardRows = [];
+
+  function setupBoard(board) {
+    $('stis-screen').classList.add('board-mode');
+    $('view-schedule').classList.add('hidden');
+    $('view-board').classList.remove('hidden');
+    buildCaplet($('board-caplet'), board.station);
+    $('board-station').textContent = board.station.name;
+    const list = $('board-rows');
+    for (let i = 0; i < BOARD_ROWS; i++) {
+      const li = document.createElement('li');
+      li.className = 'board-row';
+      const plat = document.createElement('span');
+      plat.className = 'board-plat';
+      const dir = document.createElement('span');
+      dir.className = 'board-dir';
+      const dest = document.createElement('span');
+      dest.className = 'board-dest';
+      const prefix = document.createElement('span');
+      prefix.className = 'board-prefix';
+      const cap = document.createElement('span');
+      cap.className = 'caplet board-caplet hidden';
+      const name = document.createElement('span');
+      name.className = 'board-name';
+      dest.append(prefix, cap, name);
+      const eta = document.createElement('span');
+      eta.className = 'board-eta';
+      li.append(plat, dir, dest, eta);
+      list.appendChild(li);
+      boardRows.push({ li, plat, dir, prefix, cap, name, eta, shown: undefined });
+    }
+  }
+
+  function boardTick() {
+    const now = Date.now();
+    renderClock(now, 'board-clock');
+    const { secondsOfDay, arrivals } = arrivalsForServiceDay(now);
+    const upcoming = arrivals.filter(a =>
+      a.t - secondsOfDay >= -HIDE_AFTER_SECONDS && a.t - secondsOfDay <= BOARD_MAX_ETA_SECONDS);
+
+    boardRows.forEach((row, i) => {
+      const item = upcoming[i] || null;
+      if (row.shown !== item) {
+        row.plat.textContent = item ? item.plat : '';
+        row.dir.textContent = item ? item.svc.dirText : '';
+        row.prefix.textContent = item ? item.svc.prefix : '';
+        row.name.textContent = item ? item.svc.dest.name : '';
+        buildCaplet(row.cap, item ? item.svc.dest : null);
+        row.li.classList.toggle('board-row-empty', !item);
+        row.shown = item;
+      }
+      if (!item) {
+        row.eta.textContent = '';
+        return;
+      }
+      const secs = item.t - secondsOfDay;
+      const arriving = secs <= SHOW_BEFORE_SECONDS;
+      row.li.classList.toggle('board-row-arriving', arriving);
+      if (arriving) {
+        row.eta.textContent = 'Arriving';
+      } else {
+        const mins = Math.ceil(secs / 60);
+        row.eta.textContent = `${mins} ${mins === 1 ? 'min' : 'mins'}`;
+      }
+    });
+
+    let note = '';
+    if (!arrivals.some(a => a.t - secondsOfDay >= -HIDE_AFTER_SECONDS)) note = 'Train service has ended';
+    else if (upcoming.length === 0) note = 'Train service has not started';
+    $('board-note').textContent = note;
   }
 
   function tick() {
@@ -402,13 +501,20 @@
       err.classList.remove('hidden');
     }
 
-    const entries = [...STOPS.values()]
-      .sort((a, b) => a.lineCode.localeCompare(b.lineCode) || a.station.n - b.station.n || a.plat.localeCompare(b.plat))
+    const boards = new Map();
+    STOPS.forEach(s => {
+      const key = `${s.lineCode}${s.station.n}`;
+      if (!boards.has(key)) boards.set(key, boardFor(s.lineCode, s.station.n));
+    });
+    const entries = [...boards.values(), ...STOPS.values()]
+      .sort((a, b) => a.lineCode.localeCompare(b.lineCode) || a.station.n - b.station.n ||
+        (a.isBoard ? -1 : b.isBoard ? 1 : a.plat.localeCompare(b.plat)))
       .map(s => ({
         stop: s,
         // Words to match against: each search term must start one of these words.
         words: [s.station.name, s.station.abbr || '', ...s.station.codes, s.line.name,
-          `platform ${s.plat}`, `${s.lineCode}${s.station.n}${s.plat}`]
+          s.isBoard ? 'all platforms station board home next trains' : `platform ${s.plat}`,
+          s.isBoard ? s.id : `${s.lineCode}${s.station.n}${s.plat}`]
           .join(' ').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
       }));
 
@@ -418,7 +524,9 @@
     let options = [];
     let active = -1;
 
-    const go = (s) => { window.location.search = `?stop=${encodeURIComponent(s.id)}`; };
+    const go = (s) => {
+      window.location.search = `?${s.isBoard ? 'station' : 'stop'}=${encodeURIComponent(s.id)}`;
+    };
 
     const setActive = (i) => {
       active = i;
@@ -468,10 +576,14 @@
         text.className = 'combo-text';
         const label = document.createElement('span');
         label.className = 'picker-label';
-        label.textContent = `${s.station.name} · Platform ${s.plat}`;
+        label.textContent = s.isBoard
+          ? `${s.station.name} · Station board`
+          : `${s.station.name} · Platform ${s.plat}`;
         const sub = document.createElement('span');
         sub.className = 'picker-sub';
-        sub.textContent = stopSummary(s);
+        sub.textContent = s.isBoard
+          ? `Next ${BOARD_ROWS} trains from all platforms`
+          : stopSummary(s);
         text.append(label, sub);
         li.append(cap, text);
         li.addEventListener('mousedown', (e) => e.preventDefault());
@@ -511,6 +623,20 @@
   document.addEventListener('DOMContentLoaded', () => {
     buildNetwork();
     const params = new URLSearchParams(window.location.search);
+    const rawStation = params.get('station');
+    if (rawStation) {
+      stop = findBoard(rawStation);
+      if (!stop) {
+        showPicker(rawStation);
+        return;
+      }
+      document.title = `${stop.station.name} – ${stop.line.name} station board`;
+      setupBoard(stop);
+      boardTick();
+      setInterval(boardTick, 1000);
+      return;
+    }
+
     const raw = params.get('stop') || params.get('stop_id');
     stop = findStop(raw);
 
