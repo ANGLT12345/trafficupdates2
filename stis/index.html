@@ -75,7 +75,14 @@
   <div id="picker" class="picker hidden">
     <h1>MRT Platform Screens</h1>
     <p class="picker-desc">Arrival times are estimated from a typical timetable — LTA does not publish live train arrivals. Add <code>?stop=CC15_A</code> to the URL to open a platform directly.</p>
-    <div id="picker-list"></div>
+    <p id="picker-error" class="picker-error hidden"></p>
+    <label class="combo-label" for="stop-search">Find a platform</label>
+    <div class="combo">
+      <input id="stop-search" type="search" role="combobox" autocomplete="off" spellcheck="false"
+             aria-autocomplete="list" aria-expanded="false" aria-controls="stop-results"
+             placeholder="Search by station name or code, e.g. Bishan, CC15, TE9" />
+      <ul id="stop-results" class="combo-list hidden" role="listbox" aria-label="Platforms"></ul>
+    </div>
     <p class="picker-desc">Credit to <a href="https://jooferj.github.io/circleline/ccl-stis/" target="_blank" rel="noopener noreferrer">jooferj's original CCL STIS</a> for the screen design. Circle Line announcements from <a href="https://www.lta.gov.sg/cclwayfinding/" target="_blank" rel="noopener noreferrer">LTA CCL Wayfinding</a>.</p>
     <p class="picker-back"><a href="../">← Back to SG Traffic</a></p>
   </div>

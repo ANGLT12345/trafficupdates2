@@ -2,6 +2,7 @@
 //
 // Usage:  /stis/?stop=CC15_A   (Circle Line, Bishan, Platform A)
 //         /stis/?stop=TE9_B    (Thomson-East Coast Line, Caldecott, Platform B)
+//         /stis/               (search for a platform)
 //
 // LTA does not publish live train arrival times, so arrivals are generated from
 // an approximate headway timetable (see HEADWAYS). Times are estimates only.
@@ -12,7 +13,7 @@
   // ---- Display timing (same behaviour as the reference CCL STIS) ----
   const SHOW_BEFORE_SECONDS = 30;   // switch to "arriving" screen this long before arrival
   const HIDE_AFTER_SECONDS = 15;    // keep "arriving" screen this long after arrival
-  const MAX_ETA_SECONDS = 7 * 60;   // only list trains arriving within 7 minutes
+  const MAX_ETA_SECONDS = 15 * 60;  // only list trains arriving within 15 minutes
 
   // ---- Line colours ----
   const LINE_CLASS = { NS: 'ns', EW: 'ew', NE: 'ne', CC: 'cc', DT: 'dt', TE: 'te' };
@@ -23,10 +24,10 @@
   const LINES = {
     CC: {
       name: 'Circle Line',
-      loop: true,
-      // Platform A runs with increasing station numbers, B with decreasing.
-      directions: { A: 'Anticlockwise', B: 'Clockwise' },
       stations: [
+        { n: 1, name: 'Dhoby Ghaut', abbr: 'DBG', codes: ['CC1', 'NS24', 'NE6'] },
+        { n: 2, name: 'Bras Basah', abbr: 'BBS', codes: ['CC2'] },
+        { n: 3, name: 'Esplanade', abbr: 'EPN', codes: ['CC3'] },
         { n: 4, name: 'Promenade', abbr: 'PMN', codes: ['CC4', 'DT15'] },
         { n: 5, name: 'Nicoll Highway', abbr: 'NCH', codes: ['CC5'] },
         { n: 6, name: 'Stadium', abbr: 'SDM', codes: ['CC6'] },
@@ -62,10 +63,6 @@
     },
     TE: {
       name: 'Thomson-East Coast Line',
-      loop: false,
-      // Platform A runs with increasing station numbers (towards Bayshore),
-      // B with decreasing numbers (towards Woodlands North).
-      directions: { A: 'Towards Bayshore', B: 'Towards Woodlands North' },
       stations: [
         { n: 1, name: 'Woodlands North', codes: ['TE1'] },
         { n: 2, name: 'Woodlands', codes: ['TE2', 'NS9'] },
@@ -100,37 +97,23 @@
     }
   };
 
-  // Stations offered on the picker screen.
-  const FEATURED = [
-    { title: 'Circle Line', stops: ['CC15_A', 'CC15_B', 'CC17_A', 'CC17_B'] },
-    {
-      title: 'Thomson-East Coast Line',
-      stops: LINES.TE.stations.filter(s => s.open !== false)
-        .flatMap(s => [`TE${s.n}_A`, `TE${s.n}_B`])
-    }
-  ];
 
   // ---- Platform announcements ----
   // LTA's CCL wayfinding site (www.lta.gov.sg/cclwayfinding/) hosts the real
-  // pre-arrival announcements for Circle Line loop services, e.g.
-  //   PA/Pre-arrival_ACW_Loop/PLATFORM_A_ACW_LOOP_CDT dir.m4a
-  // = "Platform A, anticlockwise loop, towards Caldecott". There is no TEL set.
+  // Circle Line pre-arrival announcements, e.g.
+  //   PA/Pre-arrival_ACW_Loop/PLATFORM_A_ACW_LOOP_CDT dir.m4a   (loop, via Caldecott)
+  //   PA/Pre-arrival_Turnaround/PLATFORM_B_CW_End_At_DBG.m4a    (ends at Dhoby Ghaut)
+  // There is no TEL set.
   const PA_BASE = 'https://www.lta.gov.sg/cclwayfinding/PA/';
+  const paUrl = (file) => PA_BASE + encodeURI(file);
 
-  function announcementUrl(stop, dest) {
-    if (stop.lineCode !== 'CC' || !dest.station || !dest.station.abbr) return null;
-    const acw = stop.plat === 'A';
-    const file = `${acw ? 'Pre-arrival_ACW_Loop' : 'Pre-arrival_CW_Loop'}/` +
-      `PLATFORM_${stop.plat}_${acw ? 'ACW' : 'CW'}_LOOP_${dest.station.abbr} dir.m4a`;
-    return PA_BASE + encodeURI(file);
-  }
-
-  // ---- Approximate headways (seconds) ----
+  // ---- Approximate timetable ----
   // Service runs roughly 05:30 to 00:15. These are estimates, not LTA data.
   const SERVICE_START = 5 * 3600 + 30 * 60;
   const SERVICE_END = 24 * 3600 + 15 * 60;
   const RUN_SECONDS_PER_STATION = 120; // average travel + dwell between stations
 
+  // Combined headway per platform on the busiest section.
   const HEADWAYS = {
     CC: { peak: 210, offpeak: 300, late: 420 },
     TE: { peak: 240, offpeak: 330, late: 420 }
@@ -139,6 +122,7 @@
   // ---- Helpers ----
   const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
+  const isInterchange = (s) => s.codes.length > 1;
 
   function isPeak(secondsOfDay, dayOfWeek) {
     if (dayOfWeek === 0 || dayOfWeek === 6) return false;
@@ -152,69 +136,108 @@
     return isPeak(secondsOfDay, dayOfWeek) ? hw.peak : hw.offpeak;
   }
 
-  function parseStop(raw) {
-    const m = /^(CC|TE)(\d{1,2})_?([AB])$/i.exec(String(raw || '').trim());
-    if (!m) return null;
-    const lineCode = m[1].toUpperCase();
+  // ---- Services ----
+  // Every platform is served by one or more services. Each service knows what
+  // the screen shows for it (direction, "via"/"ends at", caplet station) and
+  // which announcement to play.
+  //
+  // Circle Line (as modelled by LTA's CCL wayfinding site):
+  //  - Loop services run round CC4–CC34 and show "via <next interchange>".
+  //  - Turnaround services run Dhoby Ghaut CC1 <-> Prince Edward Road CC32 and
+  //    show "ends at". Stations CC4–CC32 get both, alternating.
+  //  - Marina Bay uses platforms C/D and Bayfront D/B for the loop.
+  // TEL: one service each way, "via <next interchange>" or "ends at <terminus>".
+  const STOPS = new Map(); // "CC15_A" -> stop
+
+  function addService({ lineCode, ordered, loop, key, platFor, dirText, destMode, audioFor, mult, phase }) {
     const line = LINES[lineCode];
-    const num = parseInt(m[2], 10);
-    const plat = m[3].toUpperCase();
-    const station = line.stations.find(s => s.n === num);
-    if (!station || station.open === false) return null;
-    // A terminus has no trains departing towards itself.
-    if (!line.loop && stationsAhead(line, station, plat).length === 0) return null;
-    return { lineCode, line, station, plat, id: `${lineCode}${num}_${plat}` };
+    ordered.forEach((station, i) => {
+      const ahead = loop ? ordered.slice(i + 1).concat(ordered.slice(0, i)) : ordered.slice(i + 1);
+      if (ahead.length === 0) return; // terminus: nothing departs this way
+
+      let prefix;
+      let dest;
+      const next = ahead.find(isInterchange);
+      const terminus = ahead[ahead.length - 1];
+      if (destMode === 'via') {
+        prefix = 'via';
+        dest = next;
+      } else if (destMode === 'ends') {
+        prefix = 'ends at';
+        dest = terminus;
+      } else if (next && next !== terminus) {
+        prefix = 'via';
+        dest = next;
+      } else {
+        prefix = 'ends at';
+        dest = terminus;
+      }
+
+      const plat = platFor(station);
+      const id = `${lineCode}${station.n}_${plat}`;
+      if (!STOPS.has(id)) STOPS.set(id, { id, lineCode, line, station, plat, services: [] });
+      STOPS.get(id).services.push({
+        key,
+        dirText,
+        prefix,
+        dest,
+        audio: audioFor ? audioFor(plat, dest) : null,
+        offset: i * RUN_SECONDS_PER_STATION,
+        mult,
+        phase
+      });
+    });
   }
 
-  // Stations in travel order for the given platform, starting after `station`.
-  function stationsAhead(line, station, plat) {
-    const open = line.stations.filter(s => s.open !== false);
-    const idx = open.indexOf(station);
-    const step = plat === 'A' ? 1 : -1;
-    const out = [];
-    for (let i = 1; i < open.length; i++) {
-      let j = idx + step * i;
-      if (line.loop) j = (j + open.length) % open.length;
-      else if (j < 0 || j >= open.length) break;
-      out.push(open[j]);
-    }
-    return out;
+  function buildNetwork() {
+    const ccOpen = LINES.CC.stations.filter(s => s.open !== false);
+    const ring = ccOpen.filter(s => s.n >= 4);
+    const branch = ccOpen.filter(s => s.n <= 32);
+
+    const ccLoopPlat = (acw) => (s) => {
+      if (s.n === 33) return acw ? 'C' : 'D';
+      if (s.n === 34 && acw) return 'D';
+      return acw ? 'A' : 'B';
+    };
+    const loopAudio = (acw) => (plat, dest) => paUrl(
+      `Pre-arrival_${acw ? 'ACW' : 'CW'}_Loop/PLATFORM_${plat}_${acw ? 'ACW' : 'CW'}_LOOP_${dest.abbr} dir.m4a`);
+    const turnAudio = (acw) => (plat, dest) => paUrl(
+      `Pre-arrival_Turnaround/PLATFORM_${plat}_${acw ? 'ACW' : 'CW'}_End_At_${dest.abbr}.m4a`);
+    const halfOffpeak = HEADWAYS.CC.offpeak;
+
+    addService({ lineCode: 'CC', key: 'acwLoop', ordered: ring, loop: true, platFor: ccLoopPlat(true),
+      dirText: 'Anticlockwise', destMode: 'via', audioFor: loopAudio(true), mult: 2, phase: 0 });
+    addService({ lineCode: 'CC', key: 'cwLoop', ordered: [...ring].reverse(), loop: true, platFor: ccLoopPlat(false),
+      dirText: 'Clockwise', destMode: 'via', audioFor: loopAudio(false), mult: 2, phase: 0 });
+    addService({ lineCode: 'CC', key: 'acwTurn', ordered: branch, loop: false, platFor: () => 'A',
+      dirText: 'Anticlockwise', destMode: 'ends', audioFor: turnAudio(true), mult: 2, phase: halfOffpeak });
+    addService({ lineCode: 'CC', key: 'cwTurn', ordered: [...branch].reverse(), loop: false, platFor: () => 'B',
+      dirText: 'Clockwise', destMode: 'ends', audioFor: turnAudio(false), mult: 2, phase: halfOffpeak });
+
+    const teOpen = LINES.TE.stations.filter(s => s.open !== false);
+    addService({ lineCode: 'TE', key: 'teA', ordered: teOpen, loop: false, platFor: () => 'A',
+      dirText: 'Towards Bayshore', destMode: 'auto', audioFor: null, mult: 1, phase: 0 });
+    addService({ lineCode: 'TE', key: 'teB', ordered: [...teOpen].reverse(), loop: false, platFor: () => 'B',
+      dirText: 'Towards Woodlands North', destMode: 'auto', audioFor: null, mult: 1, phase: 0 });
   }
 
-  // Number of open stations between the start of the line (for this direction)
-  // and this station. Used to stagger train times between stations.
-  function stationOffset(line, station, plat) {
-    const open = line.stations.filter(s => s.open !== false);
-    const idx = open.indexOf(station);
-    return plat === 'A' ? idx : open.length - 1 - idx;
+  function findStop(raw) {
+    const m = /^(CC|TE)(\d{1,2})_?([A-D])$/i.exec(String(raw || '').trim());
+    if (!m) return null;
+    return STOPS.get(`${m[1].toUpperCase()}${parseInt(m[2], 10)}_${m[3].toUpperCase()}`) || null;
   }
 
-  // What to show after the prefix: next interchange ("via"), or the terminus ("ends at").
-  function destinationFor(stop) {
-    const ahead = stationsAhead(stop.line, stop.station, stop.plat);
-    const nextInterchange = ahead.find(s => s.codes.length > 1);
-    if (stop.line.loop) {
-      return nextInterchange ? { prefix: 'via', station: nextInterchange } : { prefix: '', station: null };
-    }
-    const terminus = ahead[ahead.length - 1];
-    if (nextInterchange && nextInterchange !== terminus) {
-      return { prefix: 'via', station: nextInterchange };
-    }
-    return { prefix: 'ends at', station: terminus };
-  }
-
-  // Generate the day's estimated arrival times (seconds since midnight of service day).
+  // The day's estimated arrivals at this platform, merged across services.
   function arrivalsFor(stop, dayOfWeek) {
-    const offset = stationOffset(stop.line, stop.station, stop.plat) * RUN_SECONDS_PER_STATION;
-    const first = SERVICE_START + offset;
-    const last = SERVICE_END;
-    const times = [];
-    let t = first;
-    while (t <= last) {
-      times.push(t);
-      t += headwayAt(stop.lineCode, t % 86400, dayOfWeek);
-    }
-    return times;
+    const out = [];
+    stop.services.forEach(svc => {
+      let t = SERVICE_START + svc.offset + svc.phase;
+      while (t <= SERVICE_END) {
+        out.push({ t, svc });
+        t += headwayAt(stop.lineCode, t % 86400, dayOfWeek) * svc.mult;
+      }
+    });
+    return out.sort((a, b) => a.t - b.t);
   }
 
   function buildCaplet(el, station) {
@@ -235,14 +258,13 @@
 
   // ---- Screen state ----
   let stop = null;
-  let dest = null;
-  let cache = { key: '', times: [] };
+  let cache = { key: '', arrivals: [] };
   const lastRendered = {};
-  let audio = null;          // HTMLAudioElement, created once sound is enabled
+  const audioClips = new Map(); // url -> HTMLAudioElement
   let soundOn = false;
-  let wasArriving = false;
+  let arrivingItem = null;
 
-  function timesForServiceDay(now) {
+  function arrivalsForServiceDay(now) {
     // Before 03:00 counts as the previous service day (times beyond 24:00).
     const d = new Date(now);
     let secondsOfDay = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
@@ -252,13 +274,12 @@
     }
     const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
     if (cache.key !== key) {
-      cache = { key, times: arrivalsFor(stop, d.getDay()) };
+      cache = { key, arrivals: arrivalsFor(stop, d.getDay()) };
     }
-    return { secondsOfDay, times: cache.times };
+    return { secondsOfDay, arrivals: cache.arrivals };
   }
 
-  function renderRow(rowNum, etaSeconds) {
-    const key = `${rowNum}`;
+  function renderRow(rowNum, item, secondsOfDay) {
     const dirEl = $(`train-${rowNum}-dir`);
     const prefixEl = $(`train-${rowNum}-prefix`);
     const capletEl = $(`train-${rowNum}-caplet`);
@@ -266,30 +287,42 @@
     const etaEl = $(`train-${rowNum}-eta`);
     const unitEl = $(`train-${rowNum}-unit`);
 
-    if (etaSeconds === null) {
-      if (lastRendered[key] !== 'empty') {
-        dirEl.textContent = '';
-        prefixEl.textContent = '';
-        stationEl.textContent = '';
-        etaEl.textContent = '';
-        unitEl.textContent = '';
-        buildCaplet(capletEl, null);
-        lastRendered[key] = 'empty';
-      }
+    const svc = item ? item.svc : null;
+    if (lastRendered[rowNum] !== svc) {
+      dirEl.textContent = svc ? svc.dirText : '';
+      prefixEl.textContent = svc ? svc.prefix : '';
+      stationEl.textContent = svc ? svc.dest.name : '';
+      buildCaplet(capletEl, svc ? svc.dest : null);
+      lastRendered[rowNum] = svc;
+    }
+
+    if (!item) {
+      etaEl.textContent = '';
+      unitEl.textContent = '';
       return;
     }
-
-    const mins = Math.max(1, Math.ceil(etaSeconds / 60));
+    const mins = Math.max(1, Math.ceil((item.t - secondsOfDay) / 60));
     etaEl.textContent = mins;
     unitEl.textContent = mins === 1 ? 'min' : 'mins';
+  }
 
-    if (lastRendered[key] !== 'train') {
-      dirEl.textContent = stop.line.directions[stop.plat];
-      prefixEl.textContent = dest.prefix;
-      stationEl.textContent = dest.station ? dest.station.name : '';
-      buildCaplet(capletEl, dest.station);
-      lastRendered[key] = 'train';
+  function renderArriving(svc) {
+    $('arr-dir').textContent = svc.dirText;
+    $('arr-prefix').textContent = svc.prefix;
+    $('arr-station').textContent = svc.dest.name;
+    buildCaplet($('arr-caplet'), svc.dest);
+  }
+
+  function playAnnouncement(svc) {
+    if (!soundOn || !svc.audio) return;
+    audioClips.forEach(a => a.pause());
+    let clip = audioClips.get(svc.audio);
+    if (!clip) {
+      clip = new Audio(svc.audio);
+      audioClips.set(svc.audio, clip);
     }
+    clip.currentTime = 0;
+    clip.play().catch(() => {});
   }
 
   function renderClock(now) {
@@ -303,48 +336,39 @@
     const now = Date.now();
     renderClock(now);
 
-    const { secondsOfDay, times } = timesForServiceDay(now);
-    const upcoming = times.filter(t => t - secondsOfDay >= -HIDE_AFTER_SECONDS);
+    const { secondsOfDay, arrivals } = arrivalsForServiceDay(now);
+    const upcoming = arrivals.filter(a => a.t - secondsOfDay >= -HIDE_AFTER_SECONDS);
 
     // Arriving screen: the next train is about to arrive, or has just arrived.
     const next = upcoming[0];
     const arriving = next !== undefined &&
-      next - secondsOfDay <= SHOW_BEFORE_SECONDS &&
-      next - secondsOfDay >= -HIDE_AFTER_SECONDS;
+      next.t - secondsOfDay <= SHOW_BEFORE_SECONDS &&
+      next.t - secondsOfDay >= -HIDE_AFTER_SECONDS;
 
-    // Play the announcement once, as the arriving screen appears.
-    if (arriving && !wasArriving && soundOn && audio) {
-      audio.currentTime = 0;
-      audio.play().catch(() => {});
+    if (arriving && arrivingItem !== next) {
+      renderArriving(next.svc);
+      playAnnouncement(next.svc);
     }
-    wasArriving = arriving;
+    arrivingItem = arriving ? next : null;
 
     $('view-arriving').classList.toggle('hidden', !arriving);
     $('view-schedule').classList.toggle('hidden', arriving);
 
-    const listed = upcoming.filter(t => t - secondsOfDay >= 0 && t - secondsOfDay <= MAX_ETA_SECONDS);
-    renderRow(1, listed.length > 0 ? listed[0] - secondsOfDay : null);
-    renderRow(2, listed.length > 1 ? listed[1] - secondsOfDay : null);
+    const listed = upcoming.filter(a => a.t - secondsOfDay >= 0 && a.t - secondsOfDay <= MAX_ETA_SECONDS);
+    renderRow(1, listed[0] || null, secondsOfDay);
+    renderRow(2, listed[1] || null, secondsOfDay);
 
     let note = '';
     if (upcoming.length === 0) note = 'Train service has ended';
-    else if (times[0] - secondsOfDay > MAX_ETA_SECONDS) note = 'Train service has not started';
+    else if (arrivals[0].t - secondsOfDay > MAX_ETA_SECONDS) note = 'Train service has not started';
     $('service-note').textContent = note;
-  }
-
-  function setupArrivingView() {
-    $('arr-dir').textContent = stop.line.directions[stop.plat];
-    $('arr-prefix').textContent = dest.prefix;
-    $('arr-station').textContent = dest.station ? dest.station.name : '';
-    buildCaplet($('arr-caplet'), dest.station);
   }
 
   // Browsers block audio until the viewer interacts with the page, so sound
   // starts off and is turned on with the speaker button.
   function setupSound() {
-    const url = announcementUrl(stop, dest);
+    if (!stop.services.some(s => s.audio)) return;
     const btn = $('sound-toggle');
-    if (!url) return;
     btn.classList.remove('hidden');
     $('credit-audio').classList.remove('hidden');
     const update = () => {
@@ -353,71 +377,150 @@
       btn.setAttribute('aria-pressed', String(soundOn));
     };
     btn.addEventListener('click', () => {
-      if (!audio) {
-        audio = new Audio(url);
-        audio.preload = 'auto';
-      }
       soundOn = !soundOn;
-      if (!soundOn) audio.pause();
-      // A train already arriving: play straight away so the click gives feedback.
-      else if (wasArriving) { audio.currentTime = 0; audio.play().catch(() => {}); }
+      if (!soundOn) audioClips.forEach(a => a.pause());
       update();
     });
     update();
   }
 
+  // ---- Picker: search box with a dropdown of platforms ----
+  function stopSummary(s) {
+    const dirs = [...new Set(s.services.map(v => v.dirText))];
+    const dests = [...new Set(s.services.map(v => `${v.prefix} ${v.dest.name}`))];
+    return dirs.length === 1
+      ? `${dirs[0]} · ${dests.join(' / ')}`
+      : s.services.map(v => `${v.dirText} · ${v.prefix} ${v.dest.name}`).join(' / ');
+  }
+
   function showPicker(invalidId) {
     $('stis-screen').classList.add('hidden');
-    const picker = $('picker');
-    picker.classList.remove('hidden');
+    $('picker').classList.remove('hidden');
     if (invalidId) {
-      const p = document.createElement('p');
-      p.className = 'picker-error';
-      p.textContent = `Unknown stop "${invalidId}". Pick a platform below.`;
-      picker.insertBefore(p, picker.children[1]);
+      const err = $('picker-error');
+      err.textContent = `Unknown stop "${invalidId}". Search for a platform below.`;
+      err.classList.remove('hidden');
     }
-    const list = $('picker-list');
-    FEATURED.forEach(group => {
-      const h = document.createElement('h2');
-      h.textContent = group.title;
-      list.appendChild(h);
-      const grid = document.createElement('div');
-      grid.className = 'picker-grid';
-      group.stops.forEach(id => {
-        const s = parseStop(id);
-        if (!s) return;
-        const a = document.createElement('a');
-        a.href = `?stop=${encodeURIComponent(s.id)}`;
+
+    const entries = [...STOPS.values()]
+      .sort((a, b) => a.lineCode.localeCompare(b.lineCode) || a.station.n - b.station.n || a.plat.localeCompare(b.plat))
+      .map(s => ({
+        stop: s,
+        // Words to match against: each search term must start one of these words.
+        words: [s.station.name, s.station.abbr || '', ...s.station.codes, s.line.name,
+          `platform ${s.plat}`, `${s.lineCode}${s.station.n}${s.plat}`]
+          .join(' ').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+      }));
+
+    const input = $('stop-search');
+    const list = $('stop-results');
+    let shown = [];
+    let options = [];
+    let active = -1;
+
+    const go = (s) => { window.location.search = `?stop=${encodeURIComponent(s.id)}`; };
+
+    const setActive = (i) => {
+      active = i;
+      options.forEach((li, j) => li.setAttribute('aria-selected', String(j === i)));
+      if (i >= 0 && options[i]) {
+        options[i].scrollIntoView({ block: 'nearest' });
+        input.setAttribute('aria-activedescendant', options[i].id);
+      } else {
+        input.removeAttribute('aria-activedescendant');
+      }
+    };
+
+    const close = () => {
+      list.classList.add('hidden');
+      input.setAttribute('aria-expanded', 'false');
+      setActive(-1);
+    };
+
+    const render = () => {
+      const terms = input.value.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+      shown = entries.filter(e => terms.every(t => e.words.some(w => w.startsWith(t)))).map(e => e.stop);
+      list.replaceChildren();
+      options = [];
+      if (shown.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'combo-empty';
+        li.textContent = 'No matching platforms';
+        list.appendChild(li);
+      }
+      let lastLine = '';
+      shown.forEach((s, i) => {
+        if (s.lineCode !== lastLine) {
+          const group = document.createElement('li');
+          group.className = 'combo-group';
+          group.setAttribute('role', 'presentation');
+          group.textContent = s.line.name;
+          list.appendChild(group);
+          lastLine = s.lineCode;
+        }
+        const li = document.createElement('li');
+        li.id = `opt-${s.id}`;
+        li.setAttribute('role', 'option');
         const cap = document.createElement('span');
         cap.className = 'caplet';
         buildCaplet(cap, s.station);
+        const text = document.createElement('span');
+        text.className = 'combo-text';
         const label = document.createElement('span');
         label.className = 'picker-label';
         label.textContent = `${s.station.name} · Platform ${s.plat}`;
         const sub = document.createElement('span');
         sub.className = 'picker-sub';
-        sub.textContent = s.line.directions[s.plat];
-        a.append(cap, label, sub);
-        grid.appendChild(a);
+        sub.textContent = stopSummary(s);
+        text.append(label, sub);
+        li.append(cap, text);
+        li.addEventListener('mousedown', (e) => e.preventDefault());
+        li.addEventListener('click', () => go(s));
+        li.addEventListener('mousemove', () => { if (active !== i) setActive(i); });
+        list.appendChild(li);
+        options.push(li);
       });
-      list.appendChild(grid);
+      list.classList.remove('hidden');
+      input.setAttribute('aria-expanded', 'true');
+      setActive(terms.length && shown.length ? 0 : -1);
+    };
+
+    input.addEventListener('input', render);
+    input.addEventListener('focus', render);
+    input.addEventListener('blur', close);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (list.classList.contains('hidden')) render();
+        if (!shown.length) return;
+        const delta = e.key === 'ArrowDown' ? 1 : -1;
+        setActive((active + delta + shown.length) % shown.length);
+      } else if (e.key === 'Enter') {
+        if (active >= 0 && shown[active]) {
+          e.preventDefault();
+          go(shown[active]);
+        }
+      } else if (e.key === 'Escape') {
+        close();
+      }
     });
+
+    input.focus();
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    buildNetwork();
     const params = new URLSearchParams(window.location.search);
     const raw = params.get('stop') || params.get('stop_id');
-    stop = parseStop(raw);
+    stop = findStop(raw);
 
     if (!stop) {
       showPicker(raw);
       return;
     }
 
-    dest = destinationFor(stop);
     document.title = `${stop.station.name} Platform ${stop.plat} – ${stop.line.name} STIS`;
     $('platform-label').textContent = `Platform ${stop.plat}`;
-    setupArrivingView();
     setupSound();
     tick();
     setInterval(tick, 1000);
